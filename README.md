@@ -14,8 +14,8 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
 
 ## 🚦 Current Status
 
-> **Last Updated:** 2025-12-08
-> **Current Phase:** ⚪ Phase 0 - Planning & Initialization
+> **Last Updated:** 2025-12-09
+> **Current Phase:** ✅ Phase 0 Complete → 🟡 Phase 1A - Infrastructure Foundation
 
 | Module                   | Status         | Notes                                            |
 | :----------------------- | :------------- | :----------------------------------------------- |
@@ -29,51 +29,63 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
 
 ## 🗺 Development Roadmap
 
-This roadmap follows a **Layered Architecture** approach. Phases 1-3 focus on **CDK Implementation**, while Phase 4 focuses on **Application Logic**.
+This roadmap follows an **Incremental MVP** approach, building a working system first, then adding complexity.
 
-### Phase 1: Network Foundation (CDK: Network Stack)
+### Phase 0: Project Initialization ✅
 
-**Goal:** Implement the network layer using AWS CDK.
+**Goal:** Set up project structure and tooling.
 
-- [ ] **Project Init**: Initialize CDK Monorepo structure and virtual environment.
-- [ ] **CDK Network Stack**: Write CDK code to define a VPC with Public/Private Subnets and NAT Gateways.
-- [ ] **Security Groups**: Implement Security Groups for ALB (Public) and Fargate (Private) in CDK.
+- [x] **Project Structure**: Initialize directories, .gitignore, and configuration files.
+- [x] **Dependencies**: Set up requirements.txt for CDK and FastAPI.
+- [x] **Development Tools**: Create Makefile and environment template.
+- [x] **CDK Configuration**: Add cdk.json with feature flags.
 
-### Phase 2: RAG Data Pipeline (CDK: Data Stack)
+### Phase 1A: Infrastructure Foundation (Single Stack)
 
-**Goal:** Implement the data storage and retrieval layer using AWS CDK.
+**Goal:** Deploy a minimal working infrastructure to AWS.
 
-- [ ] **S3 & OpenSearch**: Write CDK code to provision the S3 Bucket and OpenSearch Serverless Collection.
-- [ ] **Bedrock Knowledge Base**: Implement `CfnKnowledgeBase` in CDK to connect S3 and OpenSearch.
-- [ ] **IAM Policies**: Define CDK permissions allowing Bedrock to access S3 and OpenSearch.
-- [ ] **Verification**: Manual sync test via AWS Console to ensure the stack works.
+- [ ] **CDK App Init**: Create `infra/app.py` as CDK entry point.
+- [ ] **Base Stack**: Create `infra/stacks/base_stack.py` with all resources.
+- [ ] **VPC & Networking**: Define VPC with Public/Private Subnets and NAT Gateway.
+- [ ] **Security Groups**: Set up security groups for ALB and Fargate.
+- [ ] **ECS Cluster**: Provision ECS Cluster and basic Fargate setup.
+- [ ] **ALB**: Configure Application Load Balancer.
+- [ ] **Hello World Docker**: Create minimal Dockerfile for testing.
+- [ ] **Deployment**: Verify `make deploy` works and service is accessible.
 
-### Phase 3: Compute & Hosting (CDK: Compute Stack)
+### Phase 1B: FastAPI Application
 
-**Goal:** Implement the container hosting environment using AWS CDK.
+**Goal:** Replace Hello World with a real FastAPI application.
 
-- [ ] **ECR Repository**: Add ECR repository definition to CDK.
-- [ ] **Dockerization**: Create a dummy `Dockerfile` (Hello World) for initial infrastructure testing.
-- [ ] **ECS Cluster**: Write CDK code to define the ECS Cluster and Fargate Task Definition.
-- [ ] **ALB & Service**: Implement `ApplicationLoadBalancedFargateService` pattern in CDK.
-- [ ] **Connectivity**: Validate that the Fargate service can reach Bedrock APIs (via NAT).
+- [ ] **FastAPI Setup**: Create `app/main.py` with basic structure.
+- [ ] **Health Endpoint**: Implement `/health` endpoint for ALB health checks.
+- [ ] **API Structure**: Set up routers and basic response models.
+- [ ] **Dockerfile**: Update to run FastAPI with uvicorn.
+- [ ] **Local Testing**: Verify `make local` runs the app successfully.
+- [ ] **Redeploy**: Push updated image to ECR and deploy to ECS.
 
-### Phase 4: Backend Implementation (Application Layer)
+### Phase 2: RAG Integration
 
-**Goal:** Develop the FastAPI application logic (Python).
+**Goal:** Add Bedrock Knowledge Base and RAG functionality.
 
-- [ ] **FastAPI Dev**: Replace dummy Docker image with actual `main.py` logic.
-- [ ] **Bedrock Integration**: Implement `boto3` client logic to call `retrieve_and_generate`.
-- [ ] **API Logic**: Define Pydantic models (Request/Response schemas).
-- [ ] **Deployment**: Deploy the full application image to ECS.
+- [ ] **S3 Bucket**: Add S3 bucket to CDK stack for document storage.
+- [ ] **OpenSearch Serverless**: Provision OpenSearch collection for vector store.
+- [ ] **Bedrock Knowledge Base**: Create Knowledge Base linking S3 and OpenSearch.
+- [ ] **IAM Roles**: Configure permissions for Bedrock and ECS Task.
+- [ ] **Bedrock Service**: Implement `app/services/bedrock.py` with boto3 client.
+- [ ] **RAG Endpoint**: Create `/api/v1/rag/query` endpoint.
+- [ ] **Testing**: Verify end-to-end RAG pipeline works.
 
-### Phase 5: Production Readiness (Optimization)
+### Phase 3: Production Readiness
 
-**Goal:** Optimize for production traffic.
+**Goal:** Optimize for production traffic and operations.
 
 - [ ] **Streaming**: Implement Server-Sent Events (SSE) for token streaming.
-- [ ] **Auto-Scaling**: Update CDK to include Auto Scaling policies.
-- [ ] **CI/CD**: Set up GitHub Actions for automated CDK deploy and Docker build.
+- [ ] **Auto-Scaling**: Add ECS auto-scaling policies based on CPU/memory.
+- [ ] **Monitoring**: Configure CloudWatch dashboards and alarms.
+- [ ] **Logging**: Structured logging with correlation IDs.
+- [ ] **CI/CD**: Set up GitHub Actions for automated testing and deployment.
+- [ ] **Documentation**: Complete API_EXAMPLES.md and DEPLOYMENT.md.
 
 ---
 
