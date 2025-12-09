@@ -4,58 +4,84 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)
 ![Docker](https://img.shields.io/badge/Docker-Container-blue?logo=docker&logoColor=white)
 ![AWS CDK](https://img.shields.io/badge/IaC-AWS%20CDK-orange)
-![Status](https://img.shields.io/badge/Status-Planning-lightgrey)
+![Status](https://img.shields.io/badge/Status-Development-yellow)
 
-A Retrieval-Augmented Generation (RAG) system designed for AWS.
+A production-ready Retrieval-Augmented Generation (RAG) system designed for AWS.
 
 This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG pipeline (Ingestion, Embedding, Retrieval) and hosts the **FastAPI** backend on **Amazon ECS (Fargate)**.
+
+**📚 Documentation:**
+
+- [Architecture Overview](ARCHITECTURE.md) - System design and component details
+- [Deployment Guide](DEPLOYMENT.md) - Step-by-step deployment instructions
+- [API Examples](API_EXAMPLES.md) - Complete API usage guide with code examples
+- [Next Steps](NEXT_STEPS.md) - Future enhancements and roadmap
+- [CI/CD Setup](.github/CICD_SETUP.md) - GitHub Actions configuration guide
 
 ---
 
 ## 🚦 Current Status
 
 > **Last Updated:** 2025-12-08
-> **Current Phase:** ⚪ Phase 0 - Planning & Initialization
+> **Current Phase:** 🟡 Phase 1 - Infrastructure & Implementation
 
-| Module                   | Status         | Notes                                            |
-| :----------------------- | :------------- | :----------------------------------------------- |
-| **Infrastructure (CDK)** | 🔴 Not Started | Architecture design finalized; CDK init pending. |
-| **RAG Pipeline**         | 🔴 Not Started | Knowledge Base and S3 bucket to be provisioned.  |
-| **Backend API**          | 🔴 Not Started | FastAPI skeleton and Dockerfile to be created.   |
-| **CI/CD**                | 🔴 Not Started | GitHub Actions workflow pending.                 |
-| **Monitoring**           | 🔴 Not Started | CloudWatch integration pending.                  |
+| Module                   | Status       | Notes                                           |
+| :----------------------- | :----------- | :---------------------------------------------- |
+| **Infrastructure (CDK)** | 🟢 Completed | VPC, ECS, ALB, S3, OpenSearch Serverless ready. |
+| **RAG Pipeline**         | 🟡 Partial   | S3 and OpenSearch ready; KB needs manual setup. |
+| **Backend API**          | 🟢 Completed | FastAPI with Bedrock integration implemented.   |
+| **CI/CD**                | 🟡 Partial   | GitHub Actions workflow ready; needs secrets.   |
+| **Monitoring**           | 🟡 Partial   | CloudWatch Logs enabled; dashboards pending.    |
 
 ---
 
 ## 🗺 Development Roadmap
 
-This roadmap outlines the step-by-step implementation plan.
+This roadmap follows a **Layered Architecture** approach. Phases 1-3 focus on **CDK Implementation**, while Phase 4 focuses on **Application Logic**.
 
-### Phase 1: Infrastructure & Networking (Week 1) - ⏳ Pending
+### Phase 1: Network Foundation (CDK: Network Stack)
 
-- [ ] **Project Init**: Initialize Monorepo structure (`infra/` + `app/`).
-- [ ] **Network Setup**: Define VPC, Public/Private Subnets, and Security Groups in CDK.
-- [ ] **RAG Core**: Provision S3 Bucket, OpenSearch Serverless, and Bedrock Knowledge Base.
-- [ ] **IAM Roles**: Define Task Execution Roles for ECS to access Bedrock and CloudWatch.
+**Goal:** Implement the network layer using AWS CDK.
 
-### Phase 2: Backend & Containerization (Week 2) - ⏳ Pending
+- [ ] **Project Init**: Initialize CDK Monorepo structure and virtual environment.
+- [ ] **CDK Network Stack**: Write CDK code to define a VPC with Public/Private Subnets and NAT Gateways.
+- [ ] **Security Groups**: Implement Security Groups for ALB (Public) and Fargate (Private) in CDK.
 
-- [ ] **Dockerization**: Write `Dockerfile` for the FastAPI application.
-- [ ] **ECS Cluster**: Define ECS Cluster and Fargate Service in CDK.
-- [ ] **Load Balancing**: Configure Application Load Balancer (ALB) and Target Groups.
-- [ ] **API Logic**: Implement `retrieve_and_generate` logic using `boto3`.
+### Phase 2: RAG Data Pipeline (CDK: Data Stack)
 
-### Phase 3: Optimization (Week 3) - ⏳ Pending
+**Goal:** Implement the data storage and retrieval layer using AWS CDK.
 
-- [ ] **Streaming Support**: Implement Server-Sent Events (SSE) for token streaming response.
-- [ ] **Prompt Engineering**: Refine System Prompts within Bedrock.
-- [ ] **Hybrid Search**: Tune OpenSearch parameters for better retrieval accuracy.
+- [ ] **S3 & OpenSearch**: Write CDK code to provision the S3 Bucket and OpenSearch Serverless Collection.
+- [ ] **Bedrock Knowledge Base**: Implement `CfnKnowledgeBase` in CDK to connect S3 and OpenSearch.
+- [ ] **IAM Policies**: Define CDK permissions allowing Bedrock to access S3 and OpenSearch.
+- [ ] **Verification**: Manual sync test via AWS Console to ensure the stack works.
 
-### Phase 4: Production Readiness (Week 4) - ⏳ Pending
+### Phase 3: Compute & Hosting (CDK: Compute Stack)
 
-- [ ] **Auto-Scaling**: Configure ECS Service Auto Scaling based on CPU/Memory usage.
-- [ ] **Security**: Implement WAF (Web Application Firewall) in front of ALB.
-- [ ] **CI/CD**: Set up pipeline to build Docker image -> Push to ECR -> Update ECS Service.
+**Goal:** Implement the container hosting environment using AWS CDK.
+
+- [ ] **ECR Repository**: Add ECR repository definition to CDK.
+- [ ] **Dockerization**: Create a dummy `Dockerfile` (Hello World) for initial infrastructure testing.
+- [ ] **ECS Cluster**: Write CDK code to define the ECS Cluster and Fargate Task Definition.
+- [ ] **ALB & Service**: Implement `ApplicationLoadBalancedFargateService` pattern in CDK.
+- [ ] **Connectivity**: Validate that the Fargate service can reach Bedrock APIs (via NAT).
+
+### Phase 4: Backend Implementation (Application Layer)
+
+**Goal:** Develop the FastAPI application logic (Python).
+
+- [ ] **FastAPI Dev**: Replace dummy Docker image with actual `main.py` logic.
+- [ ] **Bedrock Integration**: Implement `boto3` client logic to call `retrieve_and_generate`.
+- [ ] **API Logic**: Define Pydantic models (Request/Response schemas).
+- [ ] **Deployment**: Deploy the full application image to ECS.
+
+### Phase 5: Production Readiness (Optimization)
+
+**Goal:** Optimize for production traffic.
+
+- [ ] **Streaming**: Implement Server-Sent Events (SSE) for token streaming.
+- [ ] **Auto-Scaling**: Update CDK to include Auto Scaling policies.
+- [ ] **CI/CD**: Set up GitHub Actions for automated CDK deploy and Docker build.
 
 ---
 
@@ -96,6 +122,31 @@ aws-bedrock-rag-api/
 
 ## 🚀 Getting Started
 
+### Quick Start
+
+```bash
+# 1. Clone and setup
+git clone <your-repo-url>
+cd aws-bedrock-rag
+python -m venv .venv
+source .venv/bin/activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Deploy to AWS
+npx cdk bootstrap  # First time only
+npx cdk deploy
+
+# 4. Create Knowledge Base (manual step via AWS Console)
+# 5. Upload documents to S3 and sync
+```
+
+📖 **Detailed Guides:**
+
+- [Complete Deployment Guide](DEPLOYMENT.md)
+- [API Usage Examples](API_EXAMPLES.md)
+
 ### Prerequisites
 
 - **Python 3.11+**
@@ -103,41 +154,37 @@ aws-bedrock-rag-api/
 - **Docker** (MUST be running to build the image)
 - **AWS CLI** (Configured via `aws configure`)
 
-### 1. Installation
+### Development Commands
+
+Using the provided Makefile for common tasks:
 
 ```bash
-# Clone repository
-git clone [https://github.com/your-org/aws-bedrock-rag-api.git](https://github.com/your-org/aws-bedrock-rag-api.git)
-cd aws-bedrock-rag-api
-
-# Setup virtual environment
-python -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
+make help          # Show all available commands
+make install       # Install all dependencies
+make test          # Run local tests
+make local         # Run FastAPI locally
+make docker-build  # Build Docker image
+make deploy        # Deploy to AWS
+make destroy       # Destroy all resources
 ```
 
-### 2. Deployment (CDK)
+### Testing the API
 
-Deploying to ECS involves building a Docker image and provisioning a VPC/ALB, which takes longer than Lambda deployments.
+After deployment, access the interactive API documentation:
+
+```
+http://YOUR-ALB-DNS/docs
+```
+
+Simple query example:
 
 ```bash
-# Bootstrap CDK (First time only)
-npx cdk bootstrap
-
-# Deploy Stack
-npx cdk deploy
+curl -X POST "http://YOUR-ALB-DNS/api/v1/rag/query" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is this document about?",
+    "knowledge_base_id": "YOUR-KB-ID"
+  }'
 ```
-
-> ⏳ **Note:** The initial deployment may take **15-20 minutes** due to the provisioning of the VPC, NAT Gateways, OpenSearch Collection, and the Application Load Balancer.
-
-After deployment, CDK will output the **ALB DNS Name** (e.g., `http://RagSt-FastA-JV8...@aws.com`).
-
-### 3. Data Ingestion
-
-1. Upload PDF/Docx files to the created S3 Bucket.
-2. Navigate to AWS Console -> **Amazon Bedrock** -> **Knowledge bases**.
-3. Select your Knowledge Base and click **"Sync"**.
 
 ---
