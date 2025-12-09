@@ -34,26 +34,27 @@ docker-run: ## Run Docker container locally
 	@echo "Running Docker container on http://localhost:8000"
 	docker run -p 8000:8000 --env-file .env aws-bedrock-rag-api:latest
 
-deploy: ## Deploy to AWS using CDK
-	@echo "Deploying to AWS..."
-	cdk deploy --all --require-approval never
-	@echo "✅ Deployment complete"
+deploy-dev: ## Deploy to dev environment
+	@$(MAKE) deploy ENV=dev
 
-synth: ## Synthesize CloudFormation template
-	@echo "Synthesizing CloudFormation template..."
-	cdk synth
+deploy-prod: ## Deploy to prod environment
+	@$(MAKE) deploy ENV=prod
 
-diff: ## Show differences between deployed and local stack
-	cdk diff
+synth: ## Synthesize CloudFormation template (use ENV=dev|staging|prod, default: dev)
+	@echo "Synthesizing CloudFormation template for $(or $(ENV),dev)..."
+	cdk synth -c environment=$(or $(ENV),dev)
+
+diff: ## Show differences between deployed and local stack (use ENV=dev|staging|prod, default: dev)
+	cdk diff -c environment=$(or $(ENV),dev)
 
 bootstrap: ## Bootstrap CDK (first time only)
 	@echo "Bootstrapping CDK..."
 	cdk bootstrap
 	@echo "✅ CDK bootstrap complete"
 
-destroy: ## Destroy all AWS resources
-	@echo "⚠️  Destroying all AWS resources..."
-	cdk destroy --all --force
+destroy: ## Destroy all AWS resources (use ENV=dev|staging|prod, default: dev)
+	@echo "⚠️  Destroying all AWS resources for $(or $(ENV),dev)..."
+	cdk destroy --all --force -c environment=$(or $(ENV),dev)
 
 clean: ## Clean up local build artifacts
 	@echo "Cleaning up..."

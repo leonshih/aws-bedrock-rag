@@ -17,13 +17,13 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
 > **Last Updated:** 2025-12-09
 > **Current Phase:** ✅ Phase 0 Complete → 🟡 Phase 1A - Infrastructure Foundation
 
-| Module                   | Status         | Notes                                            |
-| :----------------------- | :------------- | :----------------------------------------------- |
-| **Infrastructure (CDK)** | 🔴 Not Started | Architecture design finalized; CDK init pending. |
-| **RAG Pipeline**         | 🔴 Not Started | Knowledge Base and S3 bucket to be provisioned.  |
-| **Backend API**          | 🔴 Not Started | FastAPI skeleton and Dockerfile to be created.   |
-| **CI/CD**                | 🔴 Not Started | GitHub Actions workflow pending.                 |
-| **Monitoring**           | 🔴 Not Started | CloudWatch integration pending.                  |
+| Module                   | Status         | Notes                                                     |
+| :----------------------- | :------------- | :-------------------------------------------------------- |
+| **Infrastructure (CDK)** | 🟡 In Progress | Base stack with VPC, ECS, ALB created. Ready for testing. |
+| **RAG Pipeline**         | 🔴 Not Started | Knowledge Base and S3 bucket to be provisioned.           |
+| **Backend API**          | 🟡 In Progress | Hello World app created; FastAPI integration pending.     |
+| **CI/CD**                | 🔴 Not Started | GitHub Actions workflow pending.                          |
+| **Monitoring**           | 🔴 Not Started | CloudWatch integration pending.                           |
 
 ---
 
@@ -40,17 +40,18 @@ This roadmap follows an **Incremental MVP** approach, building a working system 
 - [x] **Development Tools**: Create Makefile and environment template.
 - [x] **CDK Configuration**: Add cdk.json with feature flags.
 
-### Phase 1A: Infrastructure Foundation (Single Stack)
+### Phase 1A: Infrastructure Foundation (Single Stack) 🟡
 
 **Goal:** Deploy a minimal working infrastructure to AWS.
 
-- [ ] **CDK App Init**: Create `infra/app.py` as CDK entry point.
-- [ ] **Base Stack**: Create `infra/stacks/base_stack.py` with all resources.
-- [ ] **VPC & Networking**: Define VPC with Public/Private Subnets and NAT Gateway.
-- [ ] **Security Groups**: Set up security groups for ALB and Fargate.
-- [ ] **ECS Cluster**: Provision ECS Cluster and basic Fargate setup.
-- [ ] **ALB**: Configure Application Load Balancer.
-- [ ] **Hello World Docker**: Create minimal Dockerfile for testing.
+- [x] **CDK App Init**: Create `infra/app.py` as CDK entry point.
+- [x] **Base Stack**: Create `infra/stacks/base_stack.py` with all resources.
+- [x] **VPC & Networking**: Define VPC with Public/Private Subnets and NAT Gateway.
+- [x] **Security Groups**: Set up security groups for ALB and Fargate.
+- [x] **ECS Cluster**: Provision ECS Cluster and basic Fargate setup.
+- [x] **ALB**: Configure Application Load Balancer.
+- [x] **Hello World Docker**: Create minimal Dockerfile for testing.
+- [x] **Environment Config**: Add multi-environment support (dev/staging/prod).
 - [ ] **Deployment**: Verify `make deploy` works and service is accessible.
 
 ### Phase 1B: FastAPI Application
