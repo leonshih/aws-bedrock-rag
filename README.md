@@ -10,14 +10,6 @@ A production-ready Retrieval-Augmented Generation (RAG) system designed for AWS.
 
 This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG pipeline (Ingestion, Embedding, Retrieval) and hosts the **FastAPI** backend on **Amazon ECS (Fargate)**.
 
-**📚 Documentation:**
-
-- [Architecture Overview](ARCHITECTURE.md) - System design and component details
-- [Deployment Guide](DEPLOYMENT.md) - Step-by-step deployment instructions
-- [API Examples](API_EXAMPLES.md) - Complete API usage guide with code examples
-- [Next Steps](NEXT_STEPS.md) - Future enhancements and roadmap
-- [CI/CD Setup](.github/CICD_SETUP.md) - GitHub Actions configuration guide
-
 ---
 
 ## 🚦 Current Status
@@ -132,20 +124,15 @@ python -m venv .venv
 source .venv/bin/activate
 
 # 2. Install dependencies
-pip install -r requirements.txt
+make install
 
 # 3. Deploy to AWS
-npx cdk bootstrap  # First time only
-npx cdk deploy
+make bootstrap  # First time only
+make deploy
 
 # 4. Create Knowledge Base (manual step via AWS Console)
 # 5. Upload documents to S3 and sync
 ```
-
-📖 **Detailed Guides:**
-
-- [Complete Deployment Guide](DEPLOYMENT.md)
-- [API Usage Examples](API_EXAMPLES.md)
 
 ### Prerequisites
 
