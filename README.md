@@ -23,15 +23,15 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
 ## 🚦 Current Status
 
 > **Last Updated:** 2025-12-08
-> **Current Phase:** 🟡 Phase 1 - Infrastructure & Implementation
+> **Current Phase:** ⚪ Phase 0 - Planning & Initialization
 
-| Module                   | Status       | Notes                                           |
-| :----------------------- | :----------- | :---------------------------------------------- |
-| **Infrastructure (CDK)** | 🟢 Completed | VPC, ECS, ALB, S3, OpenSearch Serverless ready. |
-| **RAG Pipeline**         | 🟡 Partial   | S3 and OpenSearch ready; KB needs manual setup. |
-| **Backend API**          | 🟢 Completed | FastAPI with Bedrock integration implemented.   |
-| **CI/CD**                | 🟡 Partial   | GitHub Actions workflow ready; needs secrets.   |
-| **Monitoring**           | 🟡 Partial   | CloudWatch Logs enabled; dashboards pending.    |
+| Module                   | Status         | Notes                                            |
+| :----------------------- | :------------- | :----------------------------------------------- |
+| **Infrastructure (CDK)** | 🔴 Not Started | Architecture design finalized; CDK init pending. |
+| **RAG Pipeline**         | 🔴 Not Started | Knowledge Base and S3 bucket to be provisioned.  |
+| **Backend API**          | 🔴 Not Started | FastAPI skeleton and Dockerfile to be created.   |
+| **CI/CD**                | 🔴 Not Started | GitHub Actions workflow pending.                 |
+| **Monitoring**           | 🔴 Not Started | CloudWatch integration pending.                  |
 
 ---
 
