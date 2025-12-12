@@ -1,65 +1,59 @@
-.PHONY: help install test local docker-build deploy destroy clean
+APP_DIR := app
+VENV := .venv
+PYTHON := $(VENV)/bin/python
+PIP := $(VENV)/bin/pip
+PYTEST := $(VENV)/bin/pytest
+IMAGE_NAME := aws-bedrock-rag-api
+IMAGE_TAG := latest
 
+.PHONY: help
 help: ## Show this help message
 	@echo 'Usage: make [target]'
 	@echo ''
 	@echo 'Available targets:'
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-venv: ## Activate virtual environment (use: source .venv/bin/activate)
-	@echo "To activate virtual environment, run:"
-	@echo "  source .venv/bin/activate"
+.PHONY: install
+install: ## Install all dependencies
+	@echo "Creating virtual environment..."
+	python3 -m venv $(VENV)
+	@echo "Upgrading pip..."
+	$(PIP) install --upgrade pip
+	@echo "Installing dependencies..."
+	$(PIP) install -r $(APP_DIR)/requirements.txt
+	@echo "✅ All dependencies installed in $(VENV)"
 
-install: ## Install all dependencies (CDK + FastAPI)
-	@echo "Installing CDK dependencies..."
-	pip install -r requirements.txt
-	@echo "Installing FastAPI dependencies..."
-	pip install -r app/requirements.txt
-	@echo "✅ All dependencies installed"
-
+.PHONY: test
 test: ## Run local tests
 	@echo "Running tests..."
-	cd app && python -m pytest tests/ -v
+	cd $(APP_DIR) && ../$(PYTHON) -m pytest tests/ -v
 
+.PHONY: local
 local: ## Run FastAPI locally
 	@echo "Starting FastAPI server on http://localhost:8000"
-	cd app && uvicorn main:app --reload --host 0.0.0.0 --port 8000
+	cd $(APP_DIR) && ../$(PYTHON) -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
+.PHONY: docker-build
 docker-build: ## Build Docker image
 	@echo "Building Docker image..."
-	docker build -t aws-bedrock-rag-api:latest ./app
+	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) ./app
 	@echo "✅ Docker image built successfully"
 
+.PHONY: docker-run
 docker-run: ## Run Docker container locally
 	@echo "Running Docker container on http://localhost:8000"
-	docker run -p 8000:8000 --env-file .env aws-bedrock-rag-api:latest
+	docker run -p 8000:8000 --env-file .env $(IMAGE_NAME):$(IMAGE_TAG)
 
+.PHONY: deploy-dev
 deploy-dev: ## Deploy to dev environment
 	@$(MAKE) deploy ENV=dev
 
+.PHONY: deploy-prod
 deploy-prod: ## Deploy to prod environment
 	@$(MAKE) deploy ENV=prod
 
-synth: ## Synthesize CloudFormation template (use ENV=dev|staging|prod, default: dev)
-	@echo "Synthesizing CloudFormation template for $(or $(ENV),dev)..."
-	cdk synth -c environment=$(or $(ENV),dev)
-
-diff: ## Show differences between deployed and local stack (use ENV=dev|staging|prod, default: dev)
-	cdk diff -c environment=$(or $(ENV),dev)
-
-bootstrap: ## Bootstrap CDK (first time only)
-	@echo "Bootstrapping CDK..."
-	cdk bootstrap
-	@echo "✅ CDK bootstrap complete"
-
-destroy: ## Destroy all AWS resources (use ENV=dev|staging|prod, default: dev)
-	@echo "⚠️  Destroying all AWS resources for $(or $(ENV),dev)..."
-	cdk destroy --all --force -c environment=$(or $(ENV),dev)
-
-clean: ## Clean up local build artifacts
-	@echo "Cleaning up..."
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
-	rm -rf cdk.out .cdk.staging
-	@echo "✅ Cleanup complete"
+.PHONY: clean
+clean: ## Clean up virtual environment and caches
+	rm -rf $(VENV)
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	@echo "✅ Cleaned up"

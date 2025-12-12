@@ -3,7 +3,6 @@
 ![AWS](https://img.shields.io/badge/AWS-Powered-FF9900?logo=aws&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)
 ![Docker](https://img.shields.io/badge/Docker-Container-blue?logo=docker&logoColor=white)
-![AWS CDK](https://img.shields.io/badge/IaC-AWS%20CDK-orange)
 ![Status](https://img.shields.io/badge/Status-Development-yellow)
 
 A production-ready Retrieval-Augmented Generation (RAG) system designed for AWS.
@@ -15,78 +14,76 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
 ## 🚦 Current Status
 
 > **Last Updated:** 2025-12-09
-> **Current Phase:** ✅ Phase 0 Complete → 🟡 Phase 1A - Infrastructure Foundation
-
-| Module                   | Status         | Notes                                                     |
-| :----------------------- | :------------- | :-------------------------------------------------------- |
-| **Infrastructure (CDK)** | 🟡 In Progress | Base stack with VPC, ECS, ALB created. Ready for testing. |
-| **RAG Pipeline**         | 🔴 Not Started | Knowledge Base and S3 bucket to be provisioned.           |
-| **Backend API**          | 🟡 In Progress | Hello World app created; FastAPI integration pending.     |
-| **CI/CD**                | 🔴 Not Started | GitHub Actions workflow pending.                          |
-| **Monitoring**           | 🔴 Not Started | CloudWatch integration pending.                           |
+> **Current Phase:**
 
 ---
 
 ## 🗺 Development Roadmap
-
-This roadmap follows an **Incremental MVP** approach, building a working system first, then adding complexity.
 
 ### Phase 0: Project Initialization ✅
 
 **Goal:** Set up project structure and tooling.
 
 - [x] **Project Structure**: Initialize directories, .gitignore, and configuration files.
-- [x] **Dependencies**: Set up requirements.txt for CDK and FastAPI.
 - [x] **Development Tools**: Create Makefile and environment template.
-- [x] **CDK Configuration**: Add cdk.json with feature flags.
 
-### Phase 1A: Infrastructure Foundation (Single Stack) 🟡
+### Phase 1: AWS Integration & Core Adapters
 
-**Goal:** Deploy a minimal working infrastructure to AWS.
+**Goal:** Establish low-level connectivity with AWS services and implement the infrastructure layer using `boto3`.
 
-- [x] **CDK App Init**: Create `infra/app.py` as CDK entry point.
-- [x] **Base Stack**: Create `infra/stacks/base_stack.py` with all resources.
-- [x] **VPC & Networking**: Define VPC with Public/Private Subnets and NAT Gateway.
-- [x] **Security Groups**: Set up security groups for ALB and Fargate.
-- [x] **ECS Cluster**: Provision ECS Cluster and basic Fargate setup.
-- [x] **ALB**: Configure Application Load Balancer.
-- [x] **Hello World Docker**: Create minimal Dockerfile for testing.
-- [x] **Environment Config**: Add multi-environment support (dev/staging/prod).
-- [ ] **Deployment**: Verify `make deploy` works and service is accessible.
+- [ ] **AWS Configuration**: Set up environment variables in `.env` (e.g., `AWS_REGION`, `BEDROCK_KB_ID`, `BEDROCK_DATA_SOURCE_ID`, `S3_BUCKET_NAME`).
+- [ ] **Bedrock Adapter**: Implement `adapters/bedrock_adapter.py`.
+  - [ ] `retrieve_and_generate`: Wrapper for the Bedrock Agent Runtime API to handle RAG queries.
+  - [ ] `start_ingestion_job`: Wrapper to trigger a Knowledge Base sync (required after file changes).
+- [ ] **S3 Adapter**: Implement `adapters/s3_adapter.py`.
+  - [ ] `upload_file`: Upload source documents to the target Bucket.
+  - [ ] `list_files`: List objects in the Bucket to display current knowledge base assets.
+  - [ ] `delete_file`: Remove objects from S3.
+- [ ] **Unit Tests**: Write mock tests for adapters to ensure correct parameter handling for AWS calls.
 
-### Phase 1B: FastAPI Application
+### Phase 2: Data Contracts & RAG Business Logic
 
-**Goal:** Replace Hello World with a real FastAPI application.
+**Goal:** Define strict data interfaces (Contract First) and implement the core service logic.
 
-- [ ] **FastAPI Setup**: Create `app/main.py` with basic structure.
-- [ ] **Health Endpoint**: Implement `/health` endpoint for ALB health checks.
-- [ ] **API Structure**: Set up routers and basic response models.
-- [ ] **Dockerfile**: Update to run FastAPI with uvicorn.
-- [ ] **Local Testing**: Verify `make local` runs the app successfully.
-- [ ] **Redeploy**: Push updated image to ECR and deploy to ECS.
+- [ ] **DTO Definition**: Define Pydantic models in `dtos/` to enforce type safety.
+  - [ ] `ChatRequest`: User input schema (e.g., query text, **optional metadata filters**).
+  - [ ] `ChatResponse`: Standardized output including the answer and source citations.
+  - [ ] `FileUploadRequest`: Schema allowing file binaries and **custom metadata (JSON)**.
+  - [ ] `FileResponse`: Schema for file metadata (name, size, **custom_attributes**).
+- [ ] **Ingestion Service**: Create `services/ingestion_service.py` to orchestrate consistency.
+  - [ ] **Metadata Handling**: Logic to generate `.metadata.json` sidecar files based on input.
+  - [ ] **Upload Logic**: Upload source file + metadata JSON to S3 $\rightarrow$ Trigger Bedrock Sync.
+  - [ ] **Delete Logic**: Delete source file + metadata JSON from S3 $\rightarrow$ Trigger Bedrock Sync.
+- [ ] **Retrieval Service**: Create `services/rag_service.py`.
+  - [ ] Implement the logic to call the Bedrock Adapter.
+  - [ ] **Filter Generation**: Convert user requirements into Bedrock/OpenSearch metadata filters (e.g., `year > 2023`).
+  - [ ] Parse and format "Citations" from Bedrock into a clean structure.
 
-### Phase 2: RAG Integration
+### Phase 3: API Implementation
 
-**Goal:** Add Bedrock Knowledge Base and RAG functionality.
+**Goal:** Expose services via RESTful API endpoints using FastAPI routers.
 
-- [ ] **S3 Bucket**: Add S3 bucket to CDK stack for document storage.
-- [ ] **OpenSearch Serverless**: Provision OpenSearch collection for vector store.
-- [ ] **Bedrock Knowledge Base**: Create Knowledge Base linking S3 and OpenSearch.
-- [ ] **IAM Roles**: Configure permissions for Bedrock and ECS Task.
-- [ ] **Bedrock Service**: Implement `app/services/bedrock.py` with boto3 client.
-- [ ] **RAG Endpoint**: Create `/api/v1/rag/query` endpoint.
-- [ ] **Testing**: Verify end-to-end RAG pipeline works.
+- [ ] **Chat Router**: Implement `routers/chat.py`.
+  - [ ] `POST /chat`: Main endpoint for RAG interactions (supports filtering params).
+- [ ] **Ingest Router**: Implement `routers/ingest.py` for Knowledge Base management.
+  - [ ] `GET /files`: Retrieve the list of documents and their metadata from S3.
+  - [ ] `POST /files`: Endpoint for uploading new documents **with metadata** (Form Data).
+  - [ ] `DELETE /files/{filename}`: Endpoint for removing documents and updating the index.
+- [ ] **Error Handling**: Implement global exception handlers for specific AWS errors (e.g., `ThrottlingException`, `AccessDenied`) and standard HTTP errors.
+- [ ] **API Documentation**: Verify that Swagger UI (`/docs`) correctly renders the schemas and endpoints.
 
-### Phase 3: Production Readiness
+### Phase 4: Containerization & Deployment 🚢
 
-**Goal:** Optimize for production traffic and operations.
+**Goal:** Package the application and deploy it to Amazon ECS Fargate.
 
-- [ ] **Streaming**: Implement Server-Sent Events (SSE) for token streaming.
-- [ ] **Auto-Scaling**: Add ECS auto-scaling policies based on CPU/memory.
-- [ ] **Monitoring**: Configure CloudWatch dashboards and alarms.
-- [ ] **Logging**: Structured logging with correlation IDs.
-- [ ] **CI/CD**: Set up GitHub Actions for automated testing and deployment.
-- [ ] **Documentation**: Complete API_EXAMPLES.md and DEPLOYMENT.md.
+- [ ] **Docker Optimization**: Finalize the `Dockerfile` using multi-stage builds to minimize image size.
+- [ ] **Local Verification**: Run the full stack locally using `make local` or Docker to ensure all components interact correctly.
+- [ ] **ECS Preparation**:
+  - [ ] Create an ECR repository and push the image.
+  - [ ] Define the ECS Task Definition (CPU/Memory, Task Role, Execution Role).
+- [ ] **Deployment**:
+  - [ ] Create/Update the ECS Service.
+  - [ ] Verify Health Checks and log streaming in CloudWatch.
 
 ---
 
@@ -94,7 +91,6 @@ This roadmap follows an **Incremental MVP** approach, building a working system 
 
 | Category              | Technology                  | Description                                      |
 | :-------------------- | :-------------------------- | :----------------------------------------------- |
-| **Infrastructure**    | **AWS CDK (Python)**        | Infrastructure as Code.                          |
 | **Backend Framework** | **FastAPI**                 | High-performance Python async framework.         |
 | **Compute Engine**    | **Amazon ECS (Fargate)**    | Serverless container compute (Zero cold starts). |
 | **RAG Engine**        | **Bedrock Knowledge Bases** | Managed RAG workflow.                            |
@@ -108,51 +104,23 @@ This roadmap follows an **Incremental MVP** approach, building a working system 
 ```text
 aws-bedrock-rag-api/
 ├── app/                        # [Backend] FastAPI Source Code
-│   ├── Dockerfile              # Docker image definition
-│   ├── main.py                 # App entry point
+│   ├── adapters/               # External system adapters (e.g., Bedrock, S3)
+│   ├── dtos/                   # Data Transfer Objects (Pydantic models)
+│   ├── processors/             # Domain-specific processing logic
 │   ├── routers/                # API Endpoints
-│   ├── services/               # Bedrock integration logic
+│   ├── services/               # Core services (e.g., Bedrock integration)
+│   ├── utils/                  # Utility functions and helpers (Used across layers)
+│   ├── main.py                 # App entry point
+│   ├── Dockerfile              # Docker image definition
 │   └── requirements.txt        # Python dependencies
 │
-├── infra/                      # [Infra] AWS CDK Code
-│   ├── app.py                  # CDK App entry point
-│   └── stacks/                 # Stack definitions
-│       └── rag_stack.py        # Main stack (VPC, ECS, Bedrock)
-│
-├── cdk.json                    # CDK Configuration
-└── requirements.txt            # CDK Deployment dependencies
+├── .env.example               # Environment variables template
+└── Makefile                    # Development commands
 ```
 
 ---
 
 ## 🚀 Getting Started
-
-### Quick Start
-
-```bash
-# 1. Clone and setup
-git clone <your-repo-url>
-cd aws-bedrock-rag
-python -m venv .venv
-source .venv/bin/activate
-
-# 2. Install dependencies
-make install
-
-# 3. Deploy to AWS
-make bootstrap  # First time only
-make deploy
-
-# 4. Create Knowledge Base (manual step via AWS Console)
-# 5. Upload documents to S3 and sync
-```
-
-### Prerequisites
-
-- **Python 3.11+**
-- **Node.js 18+** (for AWS CDK CLI)
-- **Docker** (MUST be running to build the image)
-- **AWS CLI** (Configured via `aws configure`)
 
 ### Development Commands
 
@@ -163,28 +131,4 @@ make help          # Show all available commands
 make install       # Install all dependencies
 make test          # Run local tests
 make local         # Run FastAPI locally
-make docker-build  # Build Docker image
-make deploy        # Deploy to AWS
-make destroy       # Destroy all resources
 ```
-
-### Testing the API
-
-After deployment, access the interactive API documentation:
-
-```
-http://YOUR-ALB-DNS/docs
-```
-
-Simple query example:
-
-```bash
-curl -X POST "http://YOUR-ALB-DNS/api/v1/rag/query" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "What is this document about?",
-    "knowledge_base_id": "YOUR-KB-ID"
-  }'
-```
-
----
