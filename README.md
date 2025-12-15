@@ -82,7 +82,11 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
   - [x] `POST /files`: Endpoint for uploading new documents **with metadata** (Form Data).
   - [x] `DELETE /files/{filename}`: Endpoint for removing documents and updating the index.
   - [x] JSON metadata parsing and validation.
-- [ ] **Error Handling**: Implement global exception handlers for specific AWS errors (e.g., `ThrottlingException`, `AccessDenied`) and standard HTTP errors.
+- [x] **Global Exception Handlers**: Implement comprehensive error handling (10 tests).
+  - [x] AWS error mapping (AccessDenied→403, ThrottlingException→429, NotFound→404, etc.)
+  - [x] Pydantic validation error formatting (422).
+  - [x] General exception catch-all with logging.
+  - [x] User-friendly error messages without exposing internal details.
 - [x] **API Documentation**: Swagger UI (`/docs`) available with complete schemas and examples.
 - [ ] **Integration Tests**: Add integration tests to verify component interactions.
   - [ ] Test real service instantiation without mocks.
