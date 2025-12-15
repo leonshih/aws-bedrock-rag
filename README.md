@@ -84,6 +84,14 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
   - [x] JSON metadata parsing and validation.
 - [ ] **Error Handling**: Implement global exception handlers for specific AWS errors (e.g., `ThrottlingException`, `AccessDenied`) and standard HTTP errors.
 - [x] **API Documentation**: Swagger UI (`/docs`) available with complete schemas and examples.
+- [ ] **Integration Tests**: Add integration tests to verify component interactions.
+  - [ ] Test real service instantiation without mocks.
+  - [ ] Verify dependency injection works with actual constructors.
+  - [ ] Test API endpoints with real service dependencies.
+- [ ] **E2E Tests**: Add end-to-end tests for critical user workflows.
+  - [ ] Test complete RAG query flow (mock mode).
+  - [ ] Test document upload → list → delete workflow.
+  - [ ] Verify error handling across full stack.
 
 ### Phase 4: Containerization & Deployment 🚢
 
@@ -195,6 +203,42 @@ make local         # Run FastAPI server with hot-reload
 make docker-build  # Build Docker image
 make docker-run    # Run Docker container locally
 ```
+
+### Testing Strategy
+
+This project follows a comprehensive testing pyramid approach:
+
+#### 1. **Unit Tests** (Current: 113 tests ✅)
+- **Location**: Co-located with source code (`test_*.py` files)
+- **Coverage**: Adapters, DTOs, Services, Routers
+- **Characteristics**: 
+  - Mock all external dependencies (AWS, file system)
+  - Fast execution (~0.5s for all tests)
+  - Test individual components in isolation
+- **Run**: `make test` or `pytest app/ -v`
+
+#### 2. **Integration Tests** (Planned)
+- **Purpose**: Verify component interactions without mocks
+- **Test Cases**:
+  - Service instantiation with real dependencies
+  - Dependency injection validation
+  - Router → Service → Adapter integration
+- **Benefits**: Catch initialization errors and parameter mismatches
+- **Run**: `pytest app/tests/integration/ -v`
+
+#### 3. **E2E Tests** (Planned)
+- **Purpose**: Test complete user workflows in mock mode
+- **Test Cases**:
+  - Complete RAG query flow with metadata filtering
+  - Document lifecycle: upload → list → query → delete
+  - Error handling across full request/response cycle
+- **Benefits**: Ensure features work end-to-end from API to business logic
+- **Run**: `pytest app/tests/e2e/ -v`
+
+#### 4. **Contract Tests** (Optional)
+- **Purpose**: Ensure mocks match real implementations
+- **Verification**: Mock interface signatures match real services
+- **Benefits**: Prevent mock drift from actual code
 
 ### Environment Variables
 
