@@ -14,7 +14,7 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
 ## 🚦 Current Status
 
 > **Last Updated:** 2025-12-15  
-> **Current Phase:** Phase 2 Complete ✅ | Phase 3 In Progress 🚧  
+> **Current Phase:** Phase 3 In Progress 🚧 (API Routers Complete)  
 > **Mock Mode:** Enabled for local development without AWS credentials
 
 ---
@@ -68,18 +68,22 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
   - [x] **List Logic**: List documents with metadata loaded from sidecar files.
   - [x] **Delete Logic**: Delete source file + metadata JSON from S3 → Trigger Bedrock Sync.
 
-### Phase 3: API Implementation
+### Phase 3: API Implementation 🚧
 
 **Goal:** Expose services via RESTful API endpoints using FastAPI routers.
 
-- [ ] **Chat Router**: Implement `routers/chat.py`.
-  - [ ] `POST /chat`: Main endpoint for RAG interactions (supports filtering params).
-- [ ] **Ingest Router**: Implement `routers/ingest.py` for Knowledge Base management.
-  - [ ] `GET /files`: Retrieve the list of documents and their metadata from S3.
-  - [ ] `POST /files`: Endpoint for uploading new documents **with metadata** (Form Data).
-  - [ ] `DELETE /files/{filename}`: Endpoint for removing documents and updating the index.
+- [x] **Chat Router**: Implement `routers/chat/chat_router.py`.
+  - [x] `POST /chat`: Main endpoint for RAG interactions (supports filtering params).
+  - [x] Dependency injection with RAGService.
+  - [x] Comprehensive OpenAPI documentation with examples.
+  - [x] Error handling (400 for validation, 500 for server errors).
+- [x] **Ingest Router**: Implement `routers/ingest/ingest_router.py` for Knowledge Base management.
+  - [x] `GET /files`: Retrieve the list of documents and their metadata from S3.
+  - [x] `POST /files`: Endpoint for uploading new documents **with metadata** (Form Data).
+  - [x] `DELETE /files/{filename}`: Endpoint for removing documents and updating the index.
+  - [x] JSON metadata parsing and validation.
 - [ ] **Error Handling**: Implement global exception handlers for specific AWS errors (e.g., `ThrottlingException`, `AccessDenied`) and standard HTTP errors.
-- [ ] **API Documentation**: Verify that Swagger UI (`/docs`) correctly renders the schemas and endpoints.
+- [x] **API Documentation**: Swagger UI (`/docs`) available with complete schemas and examples.
 
 ### Phase 4: Containerization & Deployment 🚢
 
