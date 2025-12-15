@@ -38,7 +38,8 @@ class BedrockAdapter:
         self,
         query: str,
         kb_id: str,
-        model_arn: Optional[str] = None
+        model_arn: Optional[str] = None,
+        retrieval_config: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Perform RAG query using Bedrock Knowledge Base.
@@ -47,6 +48,7 @@ class BedrockAdapter:
             query: User query string
             kb_id: Knowledge Base ID
             model_arn: Optional model ARN. If None, uses config model ID.
+            retrieval_config: Optional retrieval configuration (e.g., metadata filters)
         
         Returns:
             Dict containing the response with answer and citations.
@@ -61,14 +63,20 @@ class BedrockAdapter:
             model_arn = f"arn:aws:bedrock:{self.region}::foundation-model/{self.model_id}"
         
         try:
+            kb_config = {
+                'knowledgeBaseId': kb_id,
+                'modelArn': model_arn
+            }
+            
+            # Add retrieval configuration if provided
+            if retrieval_config:
+                kb_config['retrievalConfiguration'] = retrieval_config
+            
             response = self.client.retrieve_and_generate(
                 input={'text': query},
                 retrieveAndGenerateConfiguration={
                     'type': 'KNOWLEDGE_BASE',
-                    'knowledgeBaseConfiguration': {
-                        'knowledgeBaseId': kb_id,
-                        'modelArn': model_arn
-                    }
+                    'knowledgeBaseConfiguration': kb_config
                 }
             )
             return response

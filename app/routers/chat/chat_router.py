@@ -20,9 +20,8 @@ router = APIRouter(
 
 def get_rag_service() -> RAGService:
     """Dependency injection for RAG service."""
-    bedrock_adapter = BedrockAdapter()
     config = Config()
-    return RAGService(bedrock_adapter=bedrock_adapter, config=config)
+    return RAGService(config=config)
 
 
 @router.post(
