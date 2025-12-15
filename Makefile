@@ -24,9 +24,9 @@ install: ## Install all dependencies
 	@echo "✅ All dependencies installed in $(VENV)"
 
 .PHONY: test
-test: ## Run local tests
-	@echo "Running tests..."
-	cd $(APP_DIR) && ../$(PYTHON) -m pytest tests/ -v
+test: ## Run all unit tests
+	@echo "Running all tests..."
+	$(PYTEST) app/ -v
 
 .PHONY: local
 local: ## Run FastAPI locally
