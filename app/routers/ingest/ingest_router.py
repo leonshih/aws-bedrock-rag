@@ -78,14 +78,8 @@ async def list_files(
     Raises:
         HTTPException: 500 for server errors
     """
-    try:
-        response = ingestion_service.list_documents(prefix=prefix)
-        return response
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to list files: {str(e)}"
-        )
+    response = ingestion_service.list_documents(prefix=prefix)
+    return response
 
 
 @router.post(
@@ -148,40 +142,31 @@ async def upload_file(
     Raises:
         HTTPException: 400 for invalid input, 500 for server errors
     """
-    try:
-        # Read file content
-        file_content = await file.read()
-        
-        # Parse metadata if provided
-        metadata_dict = None
-        if metadata:
-            try:
-                metadata_dict = json.loads(metadata)
-                if not isinstance(metadata_dict, dict):
-                    raise ValueError("Metadata must be a JSON object")
-            except json.JSONDecodeError as e:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Invalid JSON metadata: {str(e)}"
-                )
-            except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
-        
-        # Upload document
-        response = ingestion_service.upload_document(
-            file_content=file_content,
-            filename=file.filename,
-            metadata=metadata_dict
-        )
-        return response
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to upload file: {str(e)}"
-        )
+    # Read file content
+    file_content = await file.read()
+    
+    # Parse metadata if provided
+    metadata_dict = None
+    if metadata:
+        try:
+            metadata_dict = json.loads(metadata)
+            if not isinstance(metadata_dict, dict):
+                raise ValueError("Metadata must be a JSON object")
+        except json.JSONDecodeError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid JSON metadata: {str(e)}"
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    # Upload document
+    response = ingestion_service.upload_document(
+        file_content=file_content,
+        filename=file.filename,
+        metadata=metadata_dict
+    )
+    return response
 
 
 @router.delete(
@@ -228,13 +213,5 @@ async def delete_file(
     Raises:
         HTTPException: 404 if file not found, 500 for server errors
     """
-    try:
-        response = ingestion_service.delete_document(filename=filename)
-        return response
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete file: {str(e)}"
-        )
+    response = ingestion_service.delete_document(filename=filename)
+    return response

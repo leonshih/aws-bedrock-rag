@@ -145,7 +145,9 @@ def test_query_value_error(client, mock_rag_service):
     )
     
     assert response.status_code == 400
-    assert "Invalid filter format" in response.json()["detail"]
+    data = response.json()
+    assert data["success"] is False
+    assert "Invalid filter format" in data["error"]["message"]
 
 
 def test_query_generic_exception(client, mock_rag_service):
@@ -158,7 +160,9 @@ def test_query_generic_exception(client, mock_rag_service):
     )
     
     assert response.status_code == 500
-    assert "Failed to process query" in response.json()["detail"]
+    data = response.json()
+    assert data["success"] is False
+    assert "error" in data
 
 
 def test_query_with_all_parameters(client, mock_rag_service):

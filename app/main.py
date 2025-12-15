@@ -31,6 +31,11 @@ root_logger = logging.getLogger()
 root_logger.setLevel(log_level)
 root_logger.addHandler(console_handler)
 
+# Suppress noisy third-party loggers
+logging.getLogger('python_multipart').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+logging.getLogger('botocore').setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 app = FastAPI(

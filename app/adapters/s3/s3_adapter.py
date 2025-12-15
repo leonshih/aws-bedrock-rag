@@ -93,10 +93,11 @@ class S3Adapter:
             return self._mock_list_files(bucket, prefix)
         
         try:
-            response = self.client.list_objects_v2(
-                Bucket=bucket,
-                Prefix=prefix
-            )
+            params = {'Bucket': bucket}
+            if prefix is not None:
+                params['Prefix'] = prefix
+            
+            response = self.client.list_objects_v2(**params)
             
             if 'Contents' not in response:
                 return []

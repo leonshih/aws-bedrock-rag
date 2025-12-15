@@ -45,7 +45,7 @@ def test_app():
     
     @app.get("/test/general-exception")
     def test_general():
-        raise ValueError("Something went wrong")
+        raise RuntimeError("Something went wrong")
     
     @app.get("/test/validation/{item_id}")
     def test_validation_error(item_id: int):
@@ -66,6 +66,7 @@ def test_aws_access_denied_handler(client):
     
     assert response.status_code == 403
     data = response.json()
+    assert data["success"] is False
     assert data["error"]["type"] == "aws_error"
     assert data["error"]["code"] == "AccessDenied"
     assert "credentials" in data["error"]["message"].lower()
@@ -77,6 +78,7 @@ def test_aws_throttling_handler(client):
     
     assert response.status_code == 429
     data = response.json()
+    assert data["success"] is False
     assert data["error"]["type"] == "aws_error"
     assert data["error"]["code"] == "ThrottlingException"
     assert "too many requests" in data["error"]["message"].lower()
@@ -88,6 +90,7 @@ def test_aws_not_found_handler(client):
     
     assert response.status_code == 404
     data = response.json()
+    assert data["success"] is False
     assert data["error"]["type"] == "aws_error"
     assert data["error"]["code"] == "ResourceNotFoundException"
 
@@ -98,6 +101,7 @@ def test_aws_validation_handler(client):
     
     assert response.status_code == 400
     data = response.json()
+    assert data["success"] is False
     assert data["error"]["type"] == "aws_error"
     assert data["error"]["code"] == "ValidationException"
 
@@ -108,8 +112,9 @@ def test_general_exception_handler(client):
     
     assert response.status_code == 500
     data = response.json()
+    assert data["success"] is False
     assert data["error"]["type"] == "internal_error"
-    assert data["error"]["exception_type"] == "ValueError"
+    assert data["error"]["exception_type"] == "RuntimeError"
 
 
 def test_validation_error_handler(client):
@@ -119,6 +124,7 @@ def test_validation_error_handler(client):
     
     assert response.status_code == 422
     data = response.json()
+    assert data["success"] is False
     assert data["error"]["type"] == "validation_error"
     assert "details" in data["error"]
     assert len(data["error"]["details"]) > 0
@@ -157,6 +163,7 @@ def test_validation_error_format(client):
     response = client.get("/test/validation/not-a-number")
     
     data = response.json()
+    assert data["success"] is False
     assert data["error"]["type"] == "validation_error"
     details = data["error"]["details"]
     assert isinstance(details, list)

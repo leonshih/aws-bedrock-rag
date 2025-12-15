@@ -104,7 +104,9 @@ def test_list_files_error(client, mock_ingestion_service):
     response = client.get("/files")
     
     assert response.status_code == 500
-    assert "Failed to list files" in response.json()["detail"]
+    data = response.json()
+    assert data["success"] is False
+    assert "error" in data
 
 
 def test_upload_file_success(client, mock_ingestion_service):
@@ -144,7 +146,9 @@ def test_upload_file_with_invalid_json_metadata(client, mock_ingestion_service):
     response = client.post("/files", files=files, data=data)
     
     assert response.status_code == 400
-    assert "Invalid JSON metadata" in response.json()["detail"]
+    data = response.json()
+    assert data["success"] is False
+    assert "Invalid JSON metadata" in data["error"]["message"]
 
 
 def test_upload_file_with_non_dict_metadata(client, mock_ingestion_service):
@@ -156,7 +160,9 @@ def test_upload_file_with_non_dict_metadata(client, mock_ingestion_service):
     response = client.post("/files", files=files, data=data)
     
     assert response.status_code == 400
-    assert "Metadata must be a JSON object" in response.json()["detail"]
+    data = response.json()
+    assert data["success"] is False
+    assert "Metadata must be a JSON object" in data["error"]["message"]
 
 
 def test_upload_file_service_error(client, mock_ingestion_service):
@@ -169,7 +175,9 @@ def test_upload_file_service_error(client, mock_ingestion_service):
     response = client.post("/files", files=files)
     
     assert response.status_code == 500
-    assert "Failed to upload file" in response.json()["detail"]
+    data = response.json()
+    assert data["success"] is False
+    assert "error" in data
 
 
 def test_delete_file_success(client, mock_ingestion_service):
@@ -190,7 +198,9 @@ def test_delete_file_not_found(client, mock_ingestion_service):
     response = client.delete("/files/nonexistent.pdf")
     
     assert response.status_code == 404
-    assert "File not found" in response.json()["detail"]
+    data = response.json()
+    assert data["success"] is False
+    assert "File not found" in data["error"]["message"]
 
 
 def test_delete_file_error(client, mock_ingestion_service):
@@ -200,7 +210,9 @@ def test_delete_file_error(client, mock_ingestion_service):
     response = client.delete("/files/test-doc.pdf")
     
     assert response.status_code == 500
-    assert "Failed to delete file" in response.json()["detail"]
+    data = response.json()
+    assert data["success"] is False
+    assert "error" in data
 
 
 def test_upload_multiple_files_sequentially(client, mock_ingestion_service):

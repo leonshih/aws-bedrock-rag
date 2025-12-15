@@ -14,9 +14,10 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
 ## 🚦 Current Status
 
 > **Last Updated:** 2025-12-15  
-> **Current Phase:** Phase 3 Complete ✅ | Phase 4 Next 🚢  
+> **Current Phase:** Phase 3 Complete ✅ (Error Handling Enhanced) | Phase 4 Next 🚢  
 > **Mock Mode:** Enabled for local development without AWS credentials  
-> **Test Coverage:** 155 tests passing (19 adapters + 34 dtos + 32 services + 28 routers + 10 middleware + 32 integration)
+> **Test Coverage:** 146 tests passing (19 adapters + 34 dtos + 32 services + 28 routers + 10 middleware + 32 integration)  
+> **Known Issues:** 9 integration tests need fixing (service layer key naming inconsistencies)
 
 ---
 
@@ -77,17 +78,34 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
   - [x] `POST /chat`: Main endpoint for RAG interactions (supports filtering params).
   - [x] Dependency injection with RAGService.
   - [x] Comprehensive OpenAPI documentation with examples.
-  - [x] Error handling (400 for validation, 500 for server errors).
+  - [x] Removed try-catch blocks to let exceptions propagate to global handlers.
 - [x] **Ingest Router**: Implement `routers/ingest/ingest_router.py` for Knowledge Base management.
   - [x] `GET /files`: Retrieve the list of documents and their metadata from S3.
   - [x] `POST /files`: Endpoint for uploading new documents **with metadata** (Form Data).
   - [x] `DELETE /files/{filename}`: Endpoint for removing documents and updating the index.
   - [x] JSON metadata parsing and validation.
-- [x] **Global Exception Handlers**: Implement comprehensive error handling (10 tests).
-  - [x] AWS error mapping (AccessDenied→403, ThrottlingException→429, NotFound→404, etc.)
+  - [x] Removed try-catch blocks for unified error handling.
+- [x] **Global Exception Handlers**: Comprehensive error handling with full stack traces (10 tests).
+  - [x] AWS error mapping (ClientError, BotoCoreError, ParamValidationError).
   - [x] Pydantic validation error formatting (422).
-  - [x] General exception catch-all with logging.
+  - [x] HTTPException wrapper with standard error format.
+  - [x] FileNotFoundError handler (404).
+  - [x] ValueError handler for validation errors (400).
+  - [x] General exception catch-all with full stack trace logging.
+  - [x] All error responses include `success: false` field.
   - [x] User-friendly error messages without exposing internal details.
+- [x] **Logging Infrastructure**: Complete logging setup.
+  - [x] Root logger configuration with console handler.
+  - [x] LOG_LEVEL from .env (INFO by default).
+  - [x] Third-party logger suppression (python_multipart, urllib3, botocore).
+  - [x] Service layer logging (INFO for operations, DEBUG for details).
+  - [x] Full error stack traces with logger.exception().
+- [x] **Response DTOs**: All response models include success field.
+  - [x] ChatResponse: `success: bool = True`
+  - [x] FileResponse: `success: bool = True`
+  - [x] FileListResponse: `success: bool = True`
+  - [x] FileDeleteResponse: `success: bool = True`
+  - [x] All error responses: `success: false`
 - [x] **API Documentation**: Swagger UI (`/docs`) available with complete schemas and examples.
 - [x] **Integration Tests**: Comprehensive integration tests (32 tests).
   - [x] Test real service instantiation without mocks.
@@ -95,6 +113,9 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
   - [x] Test API endpoints with real service dependencies.
   - [x] Test exception handlers with real API requests.
   - [x] Validate OpenAPI schema and documentation.
+- [ ] **Bug Fixes**: Fix remaining integration test failures.
+  - [ ] Fix service layer key naming inconsistencies (Key vs key).
+  - [ ] Verify all tests pass (currently 146/155 passing).
 - [ ] **E2E Tests**: Add end-to-end tests for critical user workflows (Optional).
   - [ ] Test complete RAG query flow (mock mode).
   - [ ] Test document upload → list → delete workflow.

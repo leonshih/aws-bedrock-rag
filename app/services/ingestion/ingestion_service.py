@@ -113,7 +113,7 @@ class IngestionService:
         metadata_map = {}
         
         for obj in s3_objects:
-            key = obj["key"]
+            key = obj["Key"]
             
             if key.endswith(".metadata.json"):
                 # Store metadata for later matching
@@ -126,8 +126,8 @@ class IngestionService:
         # Build FileResponse objects
         for key, obj in file_map.items():
             filename = key.split("/")[-1]
-            size = obj.get("size", 0)
-            last_modified = obj.get("last_modified")
+            size = obj.get("Size", 0)
+            last_modified = obj.get("LastModified")
             
             # Check if metadata exists
             metadata_attrs = None

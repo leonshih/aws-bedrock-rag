@@ -91,13 +91,5 @@ async def query_knowledge_base(
     Raises:
         HTTPException: 400 for invalid requests, 500 for server errors
     """
-    try:
-        response = rag_service.query(request)
-        return response
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to process query: {str(e)}"
-        )
+    response = rag_service.query(request)
+    return response
