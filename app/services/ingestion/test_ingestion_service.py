@@ -65,6 +65,8 @@ class TestIngestionService:
         
         # Verify response
         assert isinstance(response, FileResponse)
+        assert response.success is True
+        assert response.filename == "test.pdf"
         assert response.filename == "test.pdf"
         assert response.size == len(file_content)
         assert response.s3_key == "documents/test.pdf"
@@ -94,13 +96,11 @@ class TestIngestionService:
         
         service = IngestionService(config=mock_config)
         file_content = b"Test content"
-        metadata = FileMetadata(
-            attributes={
-                "author": "Dr. Smith",
-                "year": 2023,
-                "category": "medical"
-            }
-        )
+        metadata = {
+            "author": "Dr. Smith",
+            "year": 2023,
+            "category": "medical"
+        }
         
         response = service.upload_document(
             file_content=file_content,
@@ -109,7 +109,7 @@ class TestIngestionService:
         )
         
         # Verify response includes metadata
-        assert response.metadata == metadata.attributes
+        assert response.metadata == metadata
         
         # Verify two S3 uploads: file + metadata
         assert mock_s3.upload_file.call_count == 2

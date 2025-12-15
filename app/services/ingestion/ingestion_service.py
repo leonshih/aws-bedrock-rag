@@ -32,7 +32,7 @@ class IngestionService:
         self,
         file_content: bytes,
         filename: str,
-        metadata: Optional[FileMetadata] = None
+        metadata: Optional[Dict[str, Any]] = None
     ) -> FileResponse:
         """
         Upload a document to S3 and trigger Knowledge Base sync.
@@ -40,7 +40,7 @@ class IngestionService:
         Args:
             file_content: Binary file content
             filename: Name of the file
-            metadata: Optional custom metadata attributes
+            metadata: Optional custom metadata attributes as dict
             
         Returns:
             FileResponse with upload details
@@ -56,9 +56,9 @@ class IngestionService:
         )
         
         # If metadata provided, create and upload .metadata.json sidecar
-        if metadata and metadata.attributes:
+        if metadata:
             metadata_key = f"{s3_key}.metadata.json"
-            metadata_content = self._generate_metadata_json(metadata.attributes)
+            metadata_content = self._generate_metadata_json(metadata)
             
             self.s3_adapter.upload_file(
                 file_content=metadata_content.encode('utf-8'),
@@ -76,7 +76,7 @@ class IngestionService:
             size=len(file_content),
             s3_key=s3_key,
             last_modified=datetime.utcnow(),
-            metadata=metadata.attributes if metadata else None
+            metadata=metadata if metadata else None
         )
     
     def list_documents(self, prefix: str = "documents/") -> FileListResponse:

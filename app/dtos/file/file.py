@@ -54,6 +54,7 @@ class FileUploadRequest(BaseModel):
 class FileResponse(BaseModel):
     """Response model for individual file information."""
     
+    success: bool = Field(default=True, description="Operation success status")
     filename: str = Field(..., description="Name of the file")
     size: int = Field(..., description="File size in bytes")
     last_modified: Optional[datetime] = Field(None, description="Last modification timestamp")
@@ -66,6 +67,7 @@ class FileResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "success": True,
                 "filename": "medical_guideline_2023.pdf",
                 "size": 2048576,
                 "last_modified": "2023-12-15T10:30:00Z",
@@ -82,6 +84,7 @@ class FileResponse(BaseModel):
 class FileListResponse(BaseModel):
     """Response model for listing files."""
     
+    success: bool = Field(default=True, description="Operation success status")
     files: List[FileResponse] = Field(
         default_factory=list,
         description="List of files in the knowledge base"
@@ -92,8 +95,10 @@ class FileListResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "success": True,
                 "files": [
                     {
+                        "success": True,
                         "filename": "doc1.pdf",
                         "size": 1024000,
                         "s3_key": "documents/doc1.pdf"
@@ -108,6 +113,7 @@ class FileListResponse(BaseModel):
 class FileDeleteResponse(BaseModel):
     """Response model for file deletion."""
     
+    success: bool = Field(default=True, description="Operation success status")
     filename: str = Field(..., description="Name of the deleted file")
     status: str = Field(..., description="Deletion status")
     message: Optional[str] = Field(None, description="Additional information")
@@ -115,6 +121,7 @@ class FileDeleteResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "success": True,
                 "filename": "old_document.pdf",
                 "status": "deleted",
                 "message": "File and metadata removed, sync job triggered"
