@@ -24,7 +24,7 @@ class RAGService:
             config: Configuration object (uses default if not provided)
         """
         self.config = config or Config()
-        self.bedrock_adapter = BedrockAdapter(self.config)
+        self.bedrock_adapter = BedrockAdapter()
     
     def query(
         self,

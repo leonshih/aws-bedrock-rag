@@ -27,8 +27,8 @@ class IngestionService:
             config: Configuration object (uses default if not provided)
         """
         self.config = config or Config()
-        self.s3_adapter = S3Adapter(self.config)
-        self.bedrock_adapter = BedrockAdapter(self.config)
+        self.s3_adapter = S3Adapter()
+        self.bedrock_adapter = BedrockAdapter()
         self.bucket_name = self.config.S3_BUCKET_NAME
     
     def upload_document(

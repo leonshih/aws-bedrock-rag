@@ -31,7 +31,7 @@ test: ## Run all unit tests
 .PHONY: local
 local: ## Run FastAPI locally
 	@echo "Starting FastAPI server on http://localhost:8000"
-	$(PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	$(PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --log-level info
 
 .PHONY: docker-build
 docker-build: ## Build Docker image
