@@ -2,7 +2,7 @@
 Unit tests for Bedrock Adapter
 """
 import pytest
-from app.adapters.bedrock_adapter import BedrockAdapter
+from app.adapters.bedrock import BedrockAdapter
 
 
 class TestBedrockAdapter:
