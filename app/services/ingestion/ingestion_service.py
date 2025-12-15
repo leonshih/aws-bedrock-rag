@@ -5,12 +5,15 @@ Orchestrates document upload, metadata management, and Knowledge Base synchroniz
 Handles the complete lifecycle of document ingestion into Bedrock Knowledge Base.
 """
 import json
+import logging
 from typing import List, Optional, Dict, Any, BinaryIO
 from datetime import datetime
 from app.adapters.s3 import S3Adapter
 from app.adapters.bedrock import BedrockAdapter
 from app.dtos.file import FileResponse, FileListResponse, FileDeleteResponse, FileMetadata
 from app.utils.config import Config
+
+logger = logging.getLogger(__name__)
 
 
 class IngestionService:
@@ -45,6 +48,8 @@ class IngestionService:
         Returns:
             FileResponse with upload details
         """
+        logger.info(f"Uploading document: {filename} ({len(file_content)} bytes)")
+        
         # Construct S3 key (store in documents/ prefix)
         s3_key = f"documents/{filename}"
         
@@ -66,9 +71,11 @@ class IngestionService:
                 key=metadata_key,
                 metadata={"Content-Type": "application/json"}
             )
+            logger.debug(f"Uploaded metadata file: {metadata_key}")
         
         # Trigger Bedrock Knowledge Base sync
         self._trigger_sync()
+        logger.info(f"Successfully uploaded {filename}, sync triggered")
         
         # Return file response
         return FileResponse(
@@ -89,6 +96,8 @@ class IngestionService:
         Returns:
             FileListResponse with list of files and metadata
         """
+        logger.info(f"Listing documents with prefix: {prefix}")
+        
         # List all objects in the bucket with the prefix
         s3_objects = self.s3_adapter.list_files(
             bucket=self.bucket_name,
@@ -136,6 +145,8 @@ class IngestionService:
             )
             total_size += size
         
+        logger.info(f"Listed {len(files)} documents, total size: {total_size} bytes")
+        
         return FileListResponse(
             files=files,
             total_count=len(files),
@@ -152,6 +163,8 @@ class IngestionService:
         Returns:
             FileDeleteResponse with deletion status
         """
+        logger.info(f"Deleting document: {filename}")
+        
         # Construct S3 keys
         s3_key = f"documents/{filename}"
         metadata_key = f"{s3_key}.metadata.json"
@@ -168,12 +181,15 @@ class IngestionService:
                 bucket=self.bucket_name,
                 key=metadata_key
             )
-        except Exception:
+            logger.debug(f"Deleted metadata file: {metadata_key}")
+        except Exception as e:
             # Metadata file may not exist, continue
+            logger.debug(f"No metadata file to delete for {filename}: {e}")
             pass
         
-        # Trigger Bedrock Knowledge Base sync
+        # Trigger Knowledge Base sync
         self._trigger_sync()
+        logger.info(f"Successfully deleted {filename}, sync triggered")
         
         return FileDeleteResponse(
             filename=filename,

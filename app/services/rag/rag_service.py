@@ -4,10 +4,13 @@ RAG Service
 Orchestrates retrieval-augmented generation using Bedrock Knowledge Base.
 Handles query processing, metadata filtering, and citation parsing.
 """
+import logging
 from typing import List, Optional, Dict, Any
 from app.adapters.bedrock import BedrockAdapter
 from app.dtos.chat import ChatRequest, ChatResponse, Citation, MetadataFilter
 from app.utils.config import Config
+
+logger = logging.getLogger(__name__)
 
 
 class RAGService:
@@ -36,6 +39,8 @@ class RAGService:
         Returns:
             ChatResponse with generated answer and citations
         """
+        logger.info(f"Processing RAG query: '{request.query[:100]}...', filters={len(request.metadata_filters or [])}, max_results={request.max_results}")
+        
         # Build model ARN
         model_id = request.model_id or self.config.BEDROCK_MODEL_ID
         model_arn = f"arn:aws:bedrock:{self.config.AWS_REGION}::foundation-model/{model_id}"
