@@ -209,15 +209,17 @@ make docker-run    # Run Docker container locally
 This project follows a comprehensive testing pyramid approach:
 
 #### 1. **Unit Tests** (Current: 113 tests ✅)
+
 - **Location**: Co-located with source code (`test_*.py` files)
 - **Coverage**: Adapters, DTOs, Services, Routers
-- **Characteristics**: 
+- **Characteristics**:
   - Mock all external dependencies (AWS, file system)
   - Fast execution (~0.5s for all tests)
   - Test individual components in isolation
 - **Run**: `make test` or `pytest app/ -v`
 
 #### 2. **Integration Tests** (Planned)
+
 - **Purpose**: Verify component interactions without mocks
 - **Test Cases**:
   - Service instantiation with real dependencies
@@ -227,6 +229,7 @@ This project follows a comprehensive testing pyramid approach:
 - **Run**: `pytest app/tests/integration/ -v`
 
 #### 3. **E2E Tests** (Planned)
+
 - **Purpose**: Test complete user workflows in mock mode
 - **Test Cases**:
   - Complete RAG query flow with metadata filtering
@@ -236,6 +239,7 @@ This project follows a comprehensive testing pyramid approach:
 - **Run**: `pytest app/tests/e2e/ -v`
 
 #### 4. **Contract Tests** (Optional)
+
 - **Purpose**: Ensure mocks match real implementations
 - **Verification**: Mock interface signatures match real services
 - **Benefits**: Prevent mock drift from actual code
