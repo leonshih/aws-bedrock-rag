@@ -1,17 +1,31 @@
 """
-Minimal Hello World application for infrastructure testing
+FastAPI application for AWS Bedrock RAG API
 """
-from flask import Flask
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
-app = Flask(__name__)
+app = FastAPI(
+    title="AWS Bedrock RAG API",
+    description="API for document management and RAG-based question answering using Amazon Bedrock",
+    version="0.1.0"
+)
 
-@app.route('/')
-def hello():
-    return {'message': 'Hello from AWS Bedrock RAG API!', 'status': 'infrastructure-test'}
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return JSONResponse(
+        content={
+            "message": "Hello from AWS Bedrock RAG API!",
+            "status": "running",
+            "version": "0.1.0"
+        }
+    )
 
-@app.route('/health')
-def health():
-    return {'status': 'healthy'}
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+@app.get("/health")
+async def health():
+    """Health check endpoint"""
+    return JSONResponse(
+        content={
+            "status": "healthy"
+        }
+    )

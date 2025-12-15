@@ -30,7 +30,7 @@ class Config:
     S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", "")
     
     # Application Configuration
-    APP_ENV: str = os.getenv("APP_ENV", "development")
+    APP_ENV: str = os.getenv("APP_ENV", "dev")
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     MOCK_MODE: bool = os.getenv("MOCK_MODE", "true").lower() == "true"
     
