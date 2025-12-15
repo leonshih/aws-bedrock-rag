@@ -14,7 +14,8 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
 ## 🚦 Current Status
 
 > **Last Updated:** 2025-12-15  
-> **Current Phase:** Phase 1 Complete ✅ | Phase 2 In Progress 🚧
+> **Current Phase:** Phase 2 Complete ✅ | Phase 3 In Progress 🚧  
+> **Mock Mode:** Enabled for local development without AWS credentials
 
 ---
 
@@ -40,27 +41,32 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
   - [x] `list_files`: List objects in the Bucket to display current knowledge base assets.
   - [x] `delete_file`: Remove objects from S3.
   - [x] `get_file`: Download file content from S3.
-- [x] **Unit Tests**: Write mock tests for adapters to ensure correct parameter handling for AWS calls (19 tests passing).
+- [x] **Unit Tests**: Write mock tests for adapters to ensure correct parameter handling for AWS calls.
 - [x] **FastAPI Conversion**: Migrated from Flask to FastAPI with async endpoints and OpenAPI documentation.
 - [x] **Docker Update**: Updated Dockerfile with multi-stage build for FastAPI + Uvicorn.
 
-### Phase 2: Data Contracts & RAG Business Logic
+### Phase 2: Data Contracts & RAG Business Logic ✅
 
 **Goal:** Define strict data interfaces (Contract First) and implement the core service logic.
 
-- [ ] **DTO Definition**: Define Pydantic models in `dtos/` to enforce type safety.
-  - [ ] `ChatRequest`: User input schema (e.g., query text, **optional metadata filters**).
-  - [ ] `ChatResponse`: Standardized output including the answer and source citations.
-  - [ ] `FileUploadRequest`: Schema allowing file binaries and **custom metadata (JSON)**.
-  - [ ] `FileResponse`: Schema for file metadata (name, size, **custom_attributes**).
-- [ ] **Ingestion Service**: Create `services/ingestion_service.py` to orchestrate consistency.
-  - [ ] **Metadata Handling**: Logic to generate `.metadata.json` sidecar files based on input.
-  - [ ] **Upload Logic**: Upload source file + metadata JSON to S3 $\rightarrow$ Trigger Bedrock Sync.
-  - [ ] **Delete Logic**: Delete source file + metadata JSON from S3 $\rightarrow$ Trigger Bedrock Sync.
-- [ ] **Retrieval Service**: Create `services/rag_service.py`.
-  - [ ] Implement the logic to call the Bedrock Adapter.
-  - [ ] **Filter Generation**: Convert user requirements into Bedrock/OpenSearch metadata filters (e.g., `year > 2023`).
-  - [ ] Parse and format "Citations" from Bedrock into a clean structure.
+- [x] **DTO Definition**: Define Pydantic models in `dtos/` to enforce type safety.
+  - [x] `ChatRequest`: User input schema with query text and optional metadata filters.
+  - [x] `ChatResponse`: Standardized output including the answer and source citations.
+  - [x] `Citation`: Citation structure with content, document info, and relevance score.
+  - [x] `MetadataFilter`: Filter schema supporting equals, not_equals, greater_than, less_than, contains operators.
+  - [x] `FileUploadRequest`: Schema allowing file binaries and custom metadata (JSON).
+  - [x] `FileResponse`: Schema for file metadata (name, size, custom_attributes, S3 key).
+  - [x] `FileListResponse`: List response with total count and size.
+  - [x] `FileDeleteResponse`: Deletion confirmation response.
+- [x] **RAG Service**: Create `services/rag/rag_service.py` for retrieval-augmented generation.
+  - [x] `query()`: Process RAG queries using Bedrock Knowledge Base.
+  - [x] **Filter Generation**: Convert metadata filters into Bedrock/OpenSearch format.
+  - [x] **Citation Parsing**: Parse and format citations from Bedrock response.
+- [x] **Ingestion Service**: Create `services/ingestion/ingestion_service.py` for document management.
+  - [x] **Metadata Handling**: Generate `.metadata.json` sidecar files in Bedrock format.
+  - [x] **Upload Logic**: Upload source file + metadata JSON to S3 → Trigger Bedrock Sync.
+  - [x] **List Logic**: List documents with metadata loaded from sidecar files.
+  - [x] **Delete Logic**: Delete source file + metadata JSON from S3 → Trigger Bedrock Sync.
 
 ### Phase 3: API Implementation
 
@@ -105,33 +111,108 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
 ## 📂 Project Structure
 
 ```text
-aws-bedrock-rag-api/
-├── app/                        # [Backend] FastAPI Source Code
-│   ├── adapters/               # External system adapters (e.g., Bedrock, S3)
-│   ├── dtos/                   # Data Transfer Objects (Pydantic models)
-│   ├── processors/             # Domain-specific processing logic
-│   ├── routers/                # API Endpoints
-│   ├── services/               # Core services (e.g., Bedrock integration)
-│   ├── utils/                  # Utility functions and helpers (Used across layers)
-│   ├── main.py                 # App entry point
-│   ├── Dockerfile              # Docker image definition
-│   └── requirements.txt        # Python dependencies
+aws-bedrock-rag/
+├── app/                        # FastAPI Application
+│   ├── adapters/              # External system integrations (AWS Bedrock, S3)
+│   │   ├── bedrock/          # Bedrock Knowledge Base adapter
+│   │   └── s3/               # S3 storage adapter
+│   │
+│   ├── dtos/                  # Data Transfer Objects (Pydantic models)
+│   │   ├── chat/             # Chat/RAG DTOs
+│   │   └── file/             # File management DTOs
+│   │
+│   ├── services/              # Business logic layer
+│   │   ├── rag/              # RAG query service
+│   │   └── ingestion/        # Document ingestion service
+│   │
+│   ├── routers/               # API endpoints (FastAPI routers)
+│   ├── utils/                 # Utilities (config, helpers)
+│   ├── main.py               # Application entry point
+│   ├── Dockerfile            # Multi-stage Docker build
+│   └── requirements.txt      # Python dependencies
 │
-├── .env.example               # Environment variables template
-└── Makefile                    # Development commands
+├── .env.example              # Environment variables template
+├── Makefile                  # Development commands
+└── README.md                 # Project documentation
 ```
 
 ---
 
 ## 🚀 Getting Started
 
-### Development Commands
+### Prerequisites
 
-Using the provided Makefile for common tasks:
+- Python 3.11+
+- AWS Account (for production deployment)
+- Docker (optional, for containerized deployment)
+
+### Development Setup
+
+1. **Clone the repository**
+
+   ```bash
+   git clone <repository-url>
+   cd aws-bedrock-rag
+   ```
+
+2. **Create environment file**
+
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration (use MOCK_MODE=true for local development)
+   ```
+
+3. **Install dependencies**
+
+   ```bash
+   make install
+   ```
+
+4. **Run tests**
+
+   ```bash
+   make test
+   ```
+
+5. **Start development server**
+   ```bash
+   make local
+   # Server will start at http://localhost:8000
+   # API docs available at http://localhost:8000/docs
+   ```
+
+### Development Commands
 
 ```bash
 make help          # Show all available commands
-make install       # Install all dependencies
-make test          # Run local tests
-make local         # Run FastAPI locally
+make install       # Install all dependencies in virtual environment
+make test          # Run all unit tests
+make local         # Run FastAPI server with hot-reload
+make docker-build  # Build Docker image
+make docker-run    # Run Docker container locally
+```
+
+### Environment Variables
+
+Key configuration in `.env`:
+
+```bash
+# Environment
+APP_ENV=dev                    # dev, staging, production
+
+# AWS Configuration
+AWS_REGION=ap-northeast-1
+AWS_PROFILE=default           # (optional) AWS CLI profile
+
+# Bedrock Configuration
+BEDROCK_KB_ID=your-kb-id-here
+BEDROCK_DATA_SOURCE_ID=your-data-source-id-here
+BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0
+
+# S3 Configuration
+S3_BUCKET_NAME=your-bucket-name-here
+
+# Application Configuration
+MOCK_MODE=true                # Enable mock mode for local development without AWS
+LOG_LEVEL=INFO
 ```
