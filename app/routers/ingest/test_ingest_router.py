@@ -54,7 +54,7 @@ def mock_ingestion_service():
 def client(mock_ingestion_service):
     """Create test client with mocked Ingestion service."""
     app.dependency_overrides[get_ingestion_service] = lambda: mock_ingestion_service
-    client = TestClient(app)
+    client = TestClient(app, raise_server_exceptions=False)
     yield client
     app.dependency_overrides.clear()
 

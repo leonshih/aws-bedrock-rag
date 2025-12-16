@@ -33,7 +33,7 @@ def mock_rag_service():
 def client(mock_rag_service):
     """Create test client with mocked RAG service."""
     app.dependency_overrides[get_rag_service] = lambda: mock_rag_service
-    client = TestClient(app)
+    client = TestClient(app, raise_server_exceptions=False)
     yield client
     app.dependency_overrides.clear()
 

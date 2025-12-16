@@ -26,7 +26,7 @@ install: ## Install all dependencies
 .PHONY: test
 test: ## Run all unit tests
 	@echo "Running all tests..."
-	$(PYTEST) app/ -v
+	PYTHONPATH=. $(PYTEST) app/ -v
 
 .PHONY: local
 local: ## Run FastAPI locally

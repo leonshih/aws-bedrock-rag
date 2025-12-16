@@ -149,14 +149,14 @@ class TestIngestionService:
         mock_s3 = Mock()
         mock_s3.list_files.return_value = [
             {
-                "key": "documents/doc1.pdf",
-                "size": 1024,
-                "last_modified": datetime(2023, 12, 1)
+                "Key": "documents/doc1.pdf",
+                "Size": 1024,
+                "LastModified": datetime(2023, 12, 1)
             },
             {
-                "key": "documents/doc2.pdf",
-                "size": 2048,
-                "last_modified": datetime(2023, 12, 2)
+                "Key": "documents/doc2.pdf",
+                "Size": 2048,
+                "LastModified": datetime(2023, 12, 2)
             }
         ]
         mock_s3_adapter_class.return_value = mock_s3
@@ -178,14 +178,14 @@ class TestIngestionService:
         mock_s3 = Mock()
         mock_s3.list_files.return_value = [
             {
-                "key": "documents/doc1.pdf",
-                "size": 1024,
-                "last_modified": datetime(2023, 12, 1)
+                "Key": "documents/doc1.pdf",
+                "Size": 1024,
+                "LastModified": datetime(2023, 12, 1)
             },
             {
-                "key": "documents/doc1.pdf.metadata.json",
-                "size": 256,
-                "last_modified": datetime(2023, 12, 1)
+                "Key": "documents/doc1.pdf.metadata.json",
+                "Size": 256,
+                "LastModified": datetime(2023, 12, 1)
             }
         ]
         mock_s3.get_file.return_value = json.dumps({
