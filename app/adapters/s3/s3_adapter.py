@@ -3,11 +3,13 @@ S3 Adapter
 
 Low-level adapter for Amazon S3 file operations.
 """
-from typing import Dict, Any, List, Optional, BinaryIO
+from typing import Dict, Optional
 import boto3
 from botocore.exceptions import ClientError
 
 from app.utils.config import get_config
+from app.dtos.common import create_success_response, SuccessResponse
+from app.dtos.adapters.s3 import S3UploadResult, S3ObjectInfo, S3ListResult, S3DeleteResult
 
 
 class S3Adapter:
@@ -37,7 +39,7 @@ class S3Adapter:
         bucket: str,
         key: str,
         metadata: Optional[Dict[str, str]] = None
-    ) -> Dict[str, Any]:
+    ) -> SuccessResponse[S3UploadResult]:
         """
         Upload a file to S3.
         
@@ -48,7 +50,7 @@ class S3Adapter:
             metadata: Optional metadata dictionary
         
         Returns:
-            Dict containing upload response.
+            Dict with success flag and S3UploadResult data containing ETag and version ID.
         
         Raises:
             ClientError: If AWS API call fails.
@@ -67,7 +69,12 @@ class S3Adapter:
                 Body=file_content,
                 **extra_args
             )
-            return response
+            
+            result = S3UploadResult(
+                etag=response.get('ETag', ''),
+                version_id=response.get('VersionId')
+            )
+            return create_success_response(result)
         except ClientError as e:
             raise e
     
@@ -75,7 +82,7 @@ class S3Adapter:
         self,
         bucket: str,
         prefix: str = ""
-    ) -> List[Dict[str, Any]]:
+    ) -> SuccessResponse[S3ListResult]:
         """
         List files in S3 bucket.
         
@@ -84,7 +91,7 @@ class S3Adapter:
             prefix: Optional prefix to filter objects
         
         Returns:
-            List of objects with metadata.
+            Dict with success flag and S3ListResult data containing list of objects with metadata.
         
         Raises:
             ClientError: If AWS API call fails.
@@ -99,18 +106,26 @@ class S3Adapter:
             
             response = self.client.list_objects_v2(**params)
             
-            if 'Contents' not in response:
-                return []
+            objects = []
+            total_size = 0
             
-            return [
-                {
-                    'Key': obj['Key'],
-                    'Size': obj['Size'],
-                    'LastModified': obj['LastModified'].isoformat(),
-                    'ETag': obj.get('ETag', '')
-                }
-                for obj in response['Contents']
-            ]
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    obj_info = S3ObjectInfo(
+                        key=obj['Key'],
+                        size=obj['Size'],
+                        last_modified=obj['LastModified'].isoformat(),
+                        etag=obj.get('ETag', '')
+                    )
+                    objects.append(obj_info)
+                    total_size += obj['Size']
+            
+            result = S3ListResult(
+                objects=objects,
+                total_count=len(objects),
+                total_size=total_size
+            )
+            return create_success_response(result)
         except ClientError as e:
             raise e
     
@@ -118,7 +133,7 @@ class S3Adapter:
         self,
         bucket: str,
         key: str
-    ) -> Dict[str, Any]:
+    ) -> SuccessResponse[S3DeleteResult]:
         """
         Delete a file from S3.
         
@@ -127,7 +142,7 @@ class S3Adapter:
             key: S3 object key (file path)
         
         Returns:
-            Dict containing delete response.
+            Dict with success flag and S3DeleteResult data.
         
         Raises:
             ClientError: If AWS API call fails.
@@ -136,11 +151,16 @@ class S3Adapter:
             return self._mock_delete_file(bucket, key)
         
         try:
-            response = self.client.delete_object(
+            self.client.delete_object(
                 Bucket=bucket,
                 Key=key
             )
-            return response
+            
+            result = S3DeleteResult(
+                deleted=True,
+                key=key
+            )
+            return create_success_response(result)
         except ClientError as e:
             raise e
     
@@ -182,57 +202,68 @@ class S3Adapter:
         bucket: str,
         key: str,
         metadata: Optional[Dict[str, str]] = None
-    ) -> Dict[str, Any]:
+    ) -> SuccessResponse[S3UploadResult]:
         """Mock implementation for local testing."""
         if bucket not in self._mock_storage:
             self._mock_storage[bucket] = {}
         
         self._mock_storage[bucket][key] = file_content
         
-        return {
-            'ResponseMetadata': {
-                'RequestId': 'mock-request-id',
-                'HTTPStatusCode': 200
-            },
-            'ETag': '"mock-etag"'
-        }
+        result = S3UploadResult(
+            etag='"mock-etag"',
+            version_id=None
+        )
+        return create_success_response(result)
     
     def _mock_list_files(
         self,
         bucket: str,
         prefix: str = ""
-    ) -> List[Dict[str, Any]]:
+    ) -> SuccessResponse[S3ListResult]:
         """Mock implementation for local testing."""
         if bucket not in self._mock_storage:
-            return []
+            result = S3ListResult(
+                objects=[],
+                total_count=0,
+                total_size=0
+            )
+            return create_success_response(result)
         
-        files = []
+        objects = []
+        total_size = 0
+        
         for key, content in self._mock_storage[bucket].items():
             if key.startswith(prefix):
-                files.append({
-                    'Key': key,
-                    'Size': len(content),
-                    'LastModified': '2025-12-15T00:00:00',
-                    'ETag': '"mock-etag"'
-                })
+                obj_info = S3ObjectInfo(
+                    key=key,
+                    size=len(content),
+                    last_modified='2025-12-15T00:00:00',
+                    etag='"mock-etag"'
+                )
+                objects.append(obj_info)
+                total_size += len(content)
         
-        return files
+        result = S3ListResult(
+            objects=objects,
+            total_count=len(objects),
+            total_size=total_size
+        )
+        return create_success_response(result)
     
     def _mock_delete_file(
         self,
         bucket: str,
         key: str
-    ) -> Dict[str, Any]:
+    ) -> SuccessResponse[S3DeleteResult]:
         """Mock implementation for local testing."""
         if bucket in self._mock_storage and key in self._mock_storage[bucket]:
             del self._mock_storage[bucket][key]
         
-        return {
-            'ResponseMetadata': {
-                'RequestId': 'mock-request-id',
-                'HTTPStatusCode': 204
-            }
-        }
+        result = S3DeleteResult(
+            deleted=True,
+            key=key
+        )
+        return create_success_response(result)
     
     def _mock_get_file(
         self,

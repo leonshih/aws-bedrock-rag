@@ -6,7 +6,7 @@ Tests Pydantic validation and serialization for file-related models.
 import pytest
 from datetime import datetime
 from pydantic import ValidationError
-from app.dtos.file import (
+from app.dtos.routers.ingest import (
     FileMetadata,
     FileUploadRequest,
     FileResponse,

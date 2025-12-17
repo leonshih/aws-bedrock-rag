@@ -27,15 +27,20 @@ class TestBedrockAdapter:
         
         response = adapter.retrieve_and_generate(query, kb_id)
         
-        # Verify response structure
-        assert 'output' in response
-        assert 'text' in response['output']
-        assert 'citations' in response
-        assert 'sessionId' in response
+        # Verify wrapper structure
+        assert response["success"] is True
+        assert "data" in response
+        
+        # Verify data structure
+        data = response["data"]
+        assert hasattr(data, "answer")
+        assert hasattr(data, "session_id")
+        assert hasattr(data, "references")
         
         # Verify content
-        assert query in response['output']['text']
-        assert len(response['citations']) > 0
+        assert query in data.answer
+        assert data.session_id == "mock-session-id"
+        assert len(data.references) > 0
     
     def test_retrieve_and_generate_with_custom_model(self, adapter):
         """Test retrieve_and_generate accepts custom model ARN."""
@@ -47,7 +52,8 @@ class TestBedrockAdapter:
         
         # In mock mode, should still return valid response
         assert response is not None
-        assert 'output' in response
+        assert response["success"] is True
+        assert "data" in response
     
     def test_retrieve_and_generate_citations_structure(self, adapter):
         """Test citations have proper structure."""
@@ -56,16 +62,16 @@ class TestBedrockAdapter:
         
         response = adapter.retrieve_and_generate(query, kb_id)
         
-        citations = response['citations']
-        assert len(citations) > 0
+        data = response["data"]
+        references = data.references
+        assert len(references) > 0
         
-        first_citation = citations[0]
-        assert 'retrievedReferences' in first_citation
-        assert len(first_citation['retrievedReferences']) > 0
-        
-        reference = first_citation['retrievedReferences'][0]
-        assert 'content' in reference
-        assert 'location' in reference
+        first_ref = references[0]
+        assert hasattr(first_ref, "content")
+        assert hasattr(first_ref, "s3_uri")
+        assert hasattr(first_ref, "score")
+        assert first_ref.content is not None
+        assert first_ref.s3_uri is not None
     
     def test_start_ingestion_job_returns_response(self, adapter):
         """Test start_ingestion_job returns proper response structure."""
@@ -74,12 +80,18 @@ class TestBedrockAdapter:
         
         response = adapter.start_ingestion_job(kb_id, data_source_id)
         
-        # Verify response structure
-        assert 'ingestionJob' in response
-        assert response['ingestionJob']['knowledgeBaseId'] == kb_id
-        assert response['ingestionJob']['dataSourceId'] == data_source_id
-        assert 'ingestionJobId' in response['ingestionJob']
-        assert 'status' in response['ingestionJob']
+        # Verify wrapper structure
+        assert response["success"] is True
+        assert "data" in response
+        
+        # Verify data structure
+        data = response["data"]
+        assert hasattr(data, "job_id")
+        assert hasattr(data, "status")
+        assert hasattr(data, "knowledge_base_id")
+        assert hasattr(data, "data_source_id")
+        assert data.knowledge_base_id == kb_id
+        assert data.data_source_id == data_source_id
     
     def test_start_ingestion_job_status(self, adapter):
         """Test ingestion job returns valid status."""
@@ -88,7 +100,7 @@ class TestBedrockAdapter:
         
         response = adapter.start_ingestion_job(kb_id, data_source_id)
         
-        status = response['ingestionJob']['status']
+        status = response["data"].status
         valid_statuses = ['STARTING', 'IN_PROGRESS', 'COMPLETE', 'FAILED']
         assert status in valid_statuses
     
@@ -102,6 +114,8 @@ class TestBedrockAdapter:
         response2 = adapter.retrieve_and_generate(query2, kb_id)
         
         # Responses should be different
-        assert response1['sessionId'] == response2['sessionId']  # Mock uses same session
-        assert query1 in response1['output']['text']
-        assert query2 in response2['output']['text']
+        data1 = response1["data"]
+        data2 = response2["data"]
+        assert data1.session_id == data2.session_id  # Mock uses same session
+        assert query1 in data1.answer
+        assert query2 in data2.answer

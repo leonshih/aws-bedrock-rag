@@ -4,11 +4,13 @@ Bedrock Adapter
 Low-level adapter for Amazon Bedrock Knowledge Base interactions.
 """
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 import boto3
 from botocore.exceptions import ClientError
 
 from app.utils.config import get_config
+from app.dtos.common import create_success_response, SuccessResponse
+from app.dtos.adapters.bedrock import BedrockRAGResult, BedrockRetrievalReference, BedrockIngestionJobResult
 
 
 class BedrockAdapter:
@@ -39,8 +41,8 @@ class BedrockAdapter:
         query: str,
         kb_id: str,
         model_arn: Optional[str] = None,
-        retrieval_config: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        retrieval_config: Optional[Dict[str, dict]] = None
+    ) -> SuccessResponse[BedrockRAGResult]:
         """
         Perform RAG query using Bedrock Knowledge Base.
         
@@ -51,7 +53,7 @@ class BedrockAdapter:
             retrieval_config: Optional retrieval configuration (e.g., metadata filters)
         
         Returns:
-            Dict containing the response with answer and citations.
+            Dict with success flag and BedrockRAGResult data containing answer, session_id, and references.
         
         Raises:
             ClientError: If AWS API call fails.
@@ -79,7 +81,28 @@ class BedrockAdapter:
                     'knowledgeBaseConfiguration': kb_config
                 }
             )
-            return response
+            
+            # Parse response and create typed result
+            answer = response.get('output', {}).get('text', '')
+            session_id = response.get('sessionId', '')
+            
+            # Extract references from citations
+            references = []
+            for citation in response.get('citations', []):
+                for ref in citation.get('retrievedReferences', []):
+                    ref_obj = BedrockRetrievalReference(
+                        content=ref.get('content', {}).get('text', ''),
+                        s3_uri=ref.get('location', {}).get('s3Location', {}).get('uri', ''),
+                        score=ref.get('metadata', {}).get('score')
+                    )
+                    references.append(ref_obj)
+            
+            result = BedrockRAGResult(
+                answer=answer,
+                session_id=session_id,
+                references=references
+            )
+            return create_success_response(result)
         except ClientError as e:
             raise e
     
@@ -87,7 +110,7 @@ class BedrockAdapter:
         self,
         kb_id: str,
         data_source_id: str
-    ) -> Dict[str, Any]:
+    ) -> SuccessResponse[BedrockIngestionJobResult]:
         """
         Start a Knowledge Base ingestion job (sync).
         
@@ -96,7 +119,7 @@ class BedrockAdapter:
             data_source_id: Data Source ID
         
         Returns:
-            Dict containing ingestion job details.
+            Dict with success flag and BedrockIngestionJobResult data.
         
         Raises:
             ClientError: If AWS API call fails.
@@ -112,7 +135,16 @@ class BedrockAdapter:
                 knowledgeBaseId=kb_id,
                 dataSourceId=data_source_id
             )
-            return response
+            
+            # Parse response and create typed result
+            job_info = response.get('ingestionJob', {})
+            result = BedrockIngestionJobResult(
+                job_id=job_info.get('ingestionJobId', ''),
+                status=job_info.get('status', 'UNKNOWN'),
+                knowledge_base_id=job_info.get('knowledgeBaseId', kb_id),
+                data_source_id=job_info.get('dataSourceId', data_source_id)
+            )
+            return create_success_response(result)
         except ClientError as e:
             raise e
     
@@ -120,59 +152,33 @@ class BedrockAdapter:
         self,
         query: str,
         kb_id: str
-    ) -> Dict[str, Any]:
+    ) -> SuccessResponse[BedrockRAGResult]:
         """Mock implementation for local testing."""
-        return {
-            'ResponseMetadata': {
-                'RequestId': 'mock-request-id',
-                'HTTPStatusCode': 200
-            },
-            'sessionId': 'mock-session-id',
-            'output': {
-                'text': f'Mock response for query: "{query}". This is a simulated answer from the Knowledge Base.'
-            },
-            'citations': [
-                {
-                    'generatedResponsePart': {
-                        'textResponsePart': {
-                            'text': 'Mock response',
-                            'span': {'start': 0, 'end': 13}
-                        }
-                    },
-                    'retrievedReferences': [
-                        {
-                            'content': {
-                                'text': 'This is mock reference content from the knowledge base.'
-                            },
-                            'location': {
-                                's3Location': {
-                                    'uri': f's3://mock-bucket/mock-document.pdf'
-                                }
-                            },
-                            'metadata': {
-                                'x-amz-bedrock-kb-source-uri': 'mock-source-uri'
-                            }
-                        }
-                    ]
-                }
-            ]
-        }
+        references = [
+            BedrockRetrievalReference(
+                content='This is mock reference content from the knowledge base.',
+                s3_uri='s3://mock-bucket/mock-document.pdf',
+                score=0.95
+            )
+        ]
+        
+        result = BedrockRAGResult(
+            answer=f'Mock response for query: "{query}". This is a simulated answer from the Knowledge Base.',
+            session_id='mock-session-id',
+            references=references
+        )
+        return create_success_response(result)
     
     def _mock_start_ingestion_job(
         self,
         kb_id: str,
         data_source_id: str
-    ) -> Dict[str, Any]:
+    ) -> SuccessResponse[BedrockIngestionJobResult]:
         """Mock implementation for local testing."""
-        return {
-            'ResponseMetadata': {
-                'RequestId': 'mock-request-id',
-                'HTTPStatusCode': 200
-            },
-            'ingestionJob': {
-                'knowledgeBaseId': kb_id,
-                'dataSourceId': data_source_id,
-                'ingestionJobId': 'mock-ingestion-job-id',
-                'status': 'STARTING'
-            }
-        }
+        result = BedrockIngestionJobResult(
+            job_id='mock-ingestion-job-id',
+            status='STARTING',
+            knowledge_base_id=kb_id,
+            data_source_id=data_source_id
+        )
+        return create_success_response(result)

@@ -66,7 +66,6 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     """Response model for chat/query endpoint."""
     
-    success: bool = Field(default=True, description="Operation success status")
     answer: str = Field(..., description="Generated answer from the LLM")
     citations: List[Citation] = Field(
         default_factory=list,
@@ -78,7 +77,6 @@ class ChatResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "success": True,
                 "answer": "Aspirin's common side effects include stomach upset, heartburn, and increased bleeding risk.",
                 "citations": [
                     {

@@ -5,7 +5,7 @@ Tests Pydantic validation and serialization for chat-related models.
 """
 import pytest
 from pydantic import ValidationError
-from app.dtos.chat import (
+from app.dtos.routers.chat import (
     MetadataFilter,
     Citation,
     ChatRequest,

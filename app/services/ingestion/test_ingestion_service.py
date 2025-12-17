@@ -8,7 +8,7 @@ import json
 from unittest.mock import Mock, patch, ANY
 from datetime import datetime
 from app.services.ingestion import IngestionService
-from app.dtos.file import FileMetadata, FileResponse
+from app.dtos.routers.ingest import FileMetadata, FileResponse
 from app.utils.config import Config
 
 
@@ -64,13 +64,14 @@ class TestIngestionService:
         )
         
         # Verify response
-        assert isinstance(response, FileResponse)
-        assert response.success is True
-        assert response.filename == "test.pdf"
-        assert response.filename == "test.pdf"
-        assert response.size == len(file_content)
-        assert response.s3_key == "documents/test.pdf"
-        assert response.metadata is None
+        assert isinstance(response, dict)
+        assert response["success"] is True
+        assert "data" in response
+        assert isinstance(response["data"], FileResponse)
+        assert response["data"].filename == "test.pdf"
+        assert response["data"].size == len(file_content)
+        assert response["data"].s3_key == "documents/test.pdf"
+        assert response["data"].metadata is None
         
         # Verify S3 upload was called
         mock_s3.upload_file.assert_called_once_with(
@@ -109,7 +110,8 @@ class TestIngestionService:
         )
         
         # Verify response includes metadata
-        assert response.metadata == metadata
+        assert response["success"] is True
+        assert response["data"].metadata == metadata
         
         # Verify two S3 uploads: file + metadata
         assert mock_s3.upload_file.call_count == 2
@@ -138,9 +140,10 @@ class TestIngestionService:
         service = IngestionService(config=mock_config)
         response = service.list_documents()
         
-        assert response.total_count == 0
-        assert response.total_size == 0
-        assert response.files == []
+        assert response["success"] is True
+        assert response["data"].total_count == 0
+        assert response["data"].total_size == 0
+        assert response["data"].files == []
     
     @patch('app.services.ingestion.ingestion_service.S3Adapter')
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
@@ -165,11 +168,12 @@ class TestIngestionService:
         service = IngestionService(config=mock_config)
         response = service.list_documents()
         
-        assert response.total_count == 2
-        assert response.total_size == 3072
-        assert len(response.files) == 2
-        assert response.files[0].filename == "doc1.pdf"
-        assert response.files[1].filename == "doc2.pdf"
+        assert response["success"] is True
+        assert response["data"].total_count == 2
+        assert response["data"].total_size == 3072
+        assert len(response["data"].files) == 2
+        assert response["data"].files[0].filename == "doc1.pdf"
+        assert response["data"].files[1].filename == "doc2.pdf"
     
     @patch('app.services.ingestion.ingestion_service.S3Adapter')
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
@@ -198,10 +202,11 @@ class TestIngestionService:
         response = service.list_documents()
         
         # Should only list the main file, not the metadata file
-        assert response.total_count == 1
-        assert response.files[0].filename == "doc1.pdf"
+        assert response["success"] is True
+        assert response["data"].total_count == 1
+        assert response["data"].files[0].filename == "doc1.pdf"
         # Metadata should be loaded and attached
-        assert response.files[0].metadata == {"author": "Dr. Smith"}
+        assert response["data"].files[0].metadata == {"author": "Dr. Smith"}
     
     @patch('app.services.ingestion.ingestion_service.S3Adapter')
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
@@ -216,9 +221,10 @@ class TestIngestionService:
         response = service.delete_document("test.pdf")
         
         # Verify response
-        assert response.filename == "test.pdf"
-        assert response.status == "deleted"
-        assert "sync triggered" in response.message
+        assert response["success"] is True
+        assert response["data"].filename == "test.pdf"
+        assert response["data"].status == "deleted"
+        assert "sync triggered" in response["data"].message
         
         # Verify S3 deletes were called
         assert mock_s3.delete_file.call_count == 2
@@ -251,7 +257,8 @@ class TestIngestionService:
         # Should not raise exception
         response = service.delete_document("test.pdf")
         
-        assert response.status == "deleted"
+        assert response["success"] is True
+        assert response["data"].status == "deleted"
     
     def test_generate_metadata_json(self, ingestion_service):
         """Test metadata JSON generation."""

@@ -10,7 +10,7 @@ from typing import List, Optional, Dict, Any, BinaryIO
 from datetime import datetime
 from app.adapters.s3 import S3Adapter
 from app.adapters.bedrock import BedrockAdapter
-from app.dtos.file import FileResponse, FileListResponse, FileDeleteResponse, FileMetadata
+from app.dtos.routers.ingest import FileResponse, FileListResponse, FileDeleteResponse, FileMetadata
 from app.utils.config import Config
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class IngestionService:
         file_content: bytes,
         filename: str,
         metadata: Optional[Dict[str, Any]] = None
-    ) -> FileResponse:
+    ) -> dict:
         """
         Upload a document to S3 and trigger Knowledge Base sync.
         
@@ -46,7 +46,7 @@ class IngestionService:
             metadata: Optional custom metadata attributes as dict
             
         Returns:
-            FileResponse with upload details
+            Dict with success flag and FileResponse data
         """
         logger.info(f"Uploading document: {filename} ({len(file_content)} bytes)")
         
@@ -54,11 +54,16 @@ class IngestionService:
         s3_key = f"documents/{filename}"
         
         # Upload the document to S3
-        self.s3_adapter.upload_file(
+        s3_upload_res = self.s3_adapter.upload_file(
             file_content=file_content,
             bucket=self.bucket_name,
             key=s3_key
         )
+
+        logger.info({
+            "bucket": self.bucket_name
+            ,"key": s3_key
+        })
         
         # If metadata provided, create and upload .metadata.json sidecar
         if metadata:
@@ -78,15 +83,18 @@ class IngestionService:
         logger.info(f"Successfully uploaded {filename}, sync triggered")
         
         # Return file response
-        return FileResponse(
-            filename=filename,
-            size=len(file_content),
-            s3_key=s3_key,
-            last_modified=datetime.utcnow(),
-            metadata=metadata if metadata else None
-        )
+        return {
+            "success": True,
+            "data": FileResponse(
+                filename=filename,
+                size=len(file_content),
+                s3_key=s3_key,
+                last_modified=datetime.utcnow(),
+                metadata=metadata if metadata else None
+            )
+        }
     
-    def list_documents(self, prefix: str = "documents/") -> FileListResponse:
+    def list_documents(self, prefix: str = "documents/") -> dict:
         """
         List all documents in the Knowledge Base.
         
@@ -94,15 +102,19 @@ class IngestionService:
             prefix: S3 prefix to filter documents (default: documents/)
             
         Returns:
-            FileListResponse with list of files and metadata
+            Dict with success flag and FileListResponse data
         """
         logger.info(f"Listing documents with prefix: {prefix}")
         
         # List all objects in the bucket with the prefix
-        s3_objects = self.s3_adapter.list_files(
+        s3_response = self.s3_adapter.list_files(
             bucket=self.bucket_name,
             prefix=prefix
         )
+        
+        # Extract S3 objects from adapter response
+        s3_list_result = s3_response["data"]
+        s3_objects = s3_list_result.objects
         
         # Filter out .metadata.json files and build FileResponse objects
         files = []
@@ -113,7 +125,7 @@ class IngestionService:
         metadata_map = {}
         
         for obj in s3_objects:
-            key = obj["Key"]
+            key = obj.key
             
             if key.endswith(".metadata.json"):
                 # Store metadata for later matching
@@ -126,8 +138,8 @@ class IngestionService:
         # Build FileResponse objects
         for key, obj in file_map.items():
             filename = key.split("/")[-1]
-            size = obj.get("Size", 0)
-            last_modified = obj.get("LastModified")
+            size = obj.size
+            last_modified = obj.last_modified
             
             # Check if metadata exists
             metadata_attrs = None
@@ -147,13 +159,16 @@ class IngestionService:
         
         logger.info(f"Listed {len(files)} documents, total size: {total_size} bytes")
         
-        return FileListResponse(
-            files=files,
-            total_count=len(files),
-            total_size=total_size
-        )
+        return {
+            "success": True,
+            "data": FileListResponse(
+                files=files,
+                total_count=len(files),
+                total_size=total_size
+            )
+        }
     
-    def delete_document(self, filename: str) -> FileDeleteResponse:
+    def delete_document(self, filename: str) -> dict:
         """
         Delete a document and its metadata from S3, then trigger sync.
         
@@ -161,7 +176,7 @@ class IngestionService:
             filename: Name of the file to delete
             
         Returns:
-            FileDeleteResponse with deletion status
+            Dict with success flag and FileDeleteResponse data
         """
         logger.info(f"Deleting document: {filename}")
         
@@ -191,11 +206,14 @@ class IngestionService:
         self._trigger_sync()
         logger.info(f"Successfully deleted {filename}, sync triggered")
         
-        return FileDeleteResponse(
-            filename=filename,
-            status="deleted",
-            message="File and metadata removed, Knowledge Base sync triggered"
-        )
+        return {
+            "success": True,
+            "data": FileDeleteResponse(
+                filename=filename,
+                status="deleted",
+                message="File and metadata removed, Knowledge Base sync triggered"
+            )
+        }
     
     def _generate_metadata_json(self, attributes: Dict[str, Any]) -> str:
         """

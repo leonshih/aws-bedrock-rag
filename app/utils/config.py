@@ -53,3 +53,16 @@ def get_config() -> Config:
         Config: Configuration object with environment variables.
     """
     return Config
+
+
+def get_config_with_status() -> dict:
+    """
+    Get application configuration with success status.
+    
+    Returns:
+        Dict with success flag and config data.
+    """
+    return {
+        "success": True,
+        "data": Config
+    }

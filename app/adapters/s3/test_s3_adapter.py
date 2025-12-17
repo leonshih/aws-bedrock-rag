@@ -27,10 +27,14 @@ class TestS3Adapter:
         
         response = adapter.upload_file(content, bucket, key)
         
-        # Verify response structure
-        assert 'ResponseMetadata' in response
-        assert response['ResponseMetadata']['HTTPStatusCode'] == 200
-        assert 'ETag' in response
+        # Verify wrapper structure
+        assert response["success"] is True
+        assert "data" in response
+        
+        # Verify data structure
+        data = response["data"]
+        assert hasattr(data, "etag")
+        assert data.etag is not None
     
     def test_upload_file_with_metadata(self, adapter):
         """Test file upload with metadata."""
@@ -42,15 +46,19 @@ class TestS3Adapter:
         response = adapter.upload_file(content, bucket, key, metadata)
         
         assert response is not None
-        assert response['ResponseMetadata']['HTTPStatusCode'] == 200
+        assert response["success"] is True
+        assert "data" in response
     
     def test_list_files_empty_bucket(self, adapter):
         """Test listing files in empty bucket."""
         bucket = "empty-bucket"
         
-        files = adapter.list_files(bucket)
+        response = adapter.list_files(bucket)
         
-        assert files == []
+        assert response["success"] is True
+        data = response["data"]
+        assert data.total_count == 0
+        assert len(data.objects) == 0
     
     def test_list_files_after_upload(self, adapter):
         """Test listing files after uploading."""

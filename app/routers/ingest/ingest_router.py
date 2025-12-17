@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from typing import Annotated, Optional
 import json
 
-from app.dtos.file import FileResponse, FileListResponse, FileDeleteResponse, FileMetadata
+from app.dtos.routers.ingest import FileResponse, FileListResponse, FileDeleteResponse, FileMetadata
 from app.services.ingestion import IngestionService
 from app.adapters.s3 import S3Adapter
 from app.adapters.bedrock import BedrockAdapter
@@ -28,7 +28,6 @@ def get_ingestion_service() -> IngestionService:
 
 @router.get(
     "",
-    response_model=FileListResponse,
     summary="List all documents",
     description="""
     Retrieve a list of all documents in the Knowledge Base with their metadata.
@@ -64,7 +63,7 @@ def get_ingestion_service() -> IngestionService:
 async def list_files(
     prefix: Optional[str] = None,
     ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
-) -> FileListResponse:
+) -> dict:
     """
     List all documents in the Knowledge Base.
     
@@ -73,7 +72,7 @@ async def list_files(
         ingestion_service: Injected Ingestion service instance
         
     Returns:
-        FileListResponse with list of files, total count, and total size
+        Dict with success flag and FileListResponse data
         
     Raises:
         HTTPException: 500 for server errors
@@ -84,7 +83,6 @@ async def list_files(
 
 @router.post(
     "",
-    response_model=FileResponse,
     summary="Upload a document",
     description="""
     Upload a new document to the Knowledge Base with optional metadata.
@@ -127,7 +125,7 @@ async def upload_file(
     file: Annotated[UploadFile, File(description="The file to upload")],
     metadata: Annotated[Optional[str], Form(description="Optional JSON metadata")] = None,
     ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
-) -> FileResponse:
+) -> dict:
     """
     Upload a document to the Knowledge Base.
     
@@ -137,7 +135,7 @@ async def upload_file(
         ingestion_service: Injected Ingestion service instance
         
     Returns:
-        FileResponse with file details
+        Dict with success flag and FileResponse data
         
     Raises:
         HTTPException: 400 for invalid input, 500 for server errors
@@ -171,7 +169,6 @@ async def upload_file(
 
 @router.delete(
     "/{filename}",
-    response_model=FileDeleteResponse,
     summary="Delete a document",
     description="""
     Delete a document from the Knowledge Base.
@@ -199,7 +196,7 @@ async def upload_file(
 async def delete_file(
     filename: str,
     ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
-) -> FileDeleteResponse:
+) -> dict:
     """
     Delete a document from the Knowledge Base.
     
@@ -208,7 +205,7 @@ async def delete_file(
         ingestion_service: Injected Ingestion service instance
         
     Returns:
-        FileDeleteResponse with deletion status
+        Dict with success flag and FileDeleteResponse data
         
     Raises:
         HTTPException: 404 if file not found, 500 for server errors

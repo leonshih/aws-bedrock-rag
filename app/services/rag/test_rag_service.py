@@ -6,7 +6,7 @@ Tests query processing, metadata filtering, and citation parsing.
 import pytest
 from unittest.mock import Mock, patch
 from app.services.rag import RAGService
-from app.dtos.chat import ChatRequest, ChatResponse, MetadataFilter
+from app.dtos.routers.chat import ChatRequest, ChatResponse, MetadataFilter
 from app.utils.config import Config
 
 
@@ -57,12 +57,15 @@ class TestRAGService:
         request = ChatRequest(query="What is aspirin?")
         response = service.query(request)
         
-        # Verify response
-        assert isinstance(response, ChatResponse)
-        assert response.answer == "This is the answer."
-        assert response.session_id == "session-123"
-        assert response.model_used == mock_config.BEDROCK_MODEL_ID
-        assert response.citations == []
+        # Verify response structure
+        assert isinstance(response, dict)
+        assert response["success"] is True
+        assert "data" in response
+        assert isinstance(response["data"], ChatResponse)
+        assert response["data"].answer == "This is the answer."
+        assert response["data"].session_id == "session-123"
+        assert response["data"].model_used == mock_config.BEDROCK_MODEL_ID
+        assert response["data"].citations == []
         
         # Verify adapter was called correctly
         mock_adapter.retrieve_and_generate.assert_called_once()
@@ -88,7 +91,8 @@ class TestRAGService:
         )
         response = service.query(request)
         
-        assert response.model_used == "anthropic.claude-3-haiku-20240307-v1:0"
+        assert response["success"] is True
+        assert response["data"].model_used == "anthropic.claude-3-haiku-20240307-v1:0"
         call_kwargs = mock_adapter.retrieve_and_generate.call_args[1]
         assert "anthropic.claude-3-haiku-20240307-v1:0" in call_kwargs["model_arn"]
     
@@ -304,8 +308,9 @@ class TestRAGService:
         )
         response = service.query(request)
         
-        assert response.answer == "Filtered answer."
-        assert len(response.citations) == 1
+        assert response["success"] is True
+        assert response["data"].answer == "Filtered answer."
+        assert len(response["data"].citations) == 1
         
         # Verify retrieval_config was passed
         call_kwargs = mock_adapter.retrieve_and_generate.call_args[1]

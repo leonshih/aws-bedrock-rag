@@ -7,7 +7,7 @@ from datetime import datetime
 from io import BytesIO
 
 from app.main import app
-from app.dtos.file import FileResponse, FileListResponse, FileDeleteResponse
+from app.dtos.routers.ingest import FileResponse, FileListResponse, FileDeleteResponse
 from app.routers.ingest.ingest_router import get_ingestion_service
 
 
@@ -17,35 +17,44 @@ def mock_ingestion_service():
     service = Mock()
     
     # Mock list_documents response
-    service.list_documents.return_value = FileListResponse(
-        files=[
-            FileResponse(
-                filename="test-doc.pdf",
-                size=1024000,
-                last_modified=datetime(2024, 1, 15, 10, 30, 0),
-                s3_key="documents/test-doc.pdf",
-                metadata={"category": "research", "year": "2024"}
-            )
-        ],
-        total_count=1,
-        total_size=1024000
-    )
+    service.list_documents.return_value = {
+        "success": True,
+        "data": FileListResponse(
+            files=[
+                FileResponse(
+                    filename="test-doc.pdf",
+                    size=1024000,
+                    last_modified=datetime(2024, 1, 15, 10, 30, 0),
+                    s3_key="documents/test-doc.pdf",
+                    metadata={"category": "research", "year": "2024"}
+                )
+            ],
+            total_count=1,
+            total_size=1024000
+        )
+    }
     
     # Mock upload_document response
-    service.upload_document.return_value = FileResponse(
-        filename="uploaded.pdf",
-        size=2048000,
-        last_modified=datetime(2024, 1, 15, 11, 0, 0),
-        s3_key="documents/uploaded.pdf",
-        metadata={"category": "test"}
-    )
+    service.upload_document.return_value = {
+        "success": True,
+        "data": FileResponse(
+            filename="uploaded.pdf",
+            size=2048000,
+            last_modified=datetime(2024, 1, 15, 11, 0, 0),
+            s3_key="documents/uploaded.pdf",
+            metadata={"category": "test"}
+        )
+    }
     
     # Mock delete_document response
-    service.delete_document.return_value = FileDeleteResponse(
-        filename="test-doc.pdf",
-        status="deleted",
-        message="File deleted successfully"
-    )
+    service.delete_document.return_value = {
+        "success": True,
+        "data": FileDeleteResponse(
+            filename="test-doc.pdf",
+            status="deleted",
+            message="File deleted successfully"
+        )
+    }
     
     return service
 
@@ -65,10 +74,12 @@ def test_list_files_success(client, mock_ingestion_service):
     
     assert response.status_code == 200
     data = response.json()
-    assert data["total_count"] == 1
-    assert data["total_size"] == 1024000
-    assert len(data["files"]) == 1
-    assert data["files"][0]["filename"] == "test-doc.pdf"
+    assert data["success"] is True
+    assert "data" in data
+    assert data["data"]["total_count"] == 1
+    assert data["data"]["total_size"] == 1024000
+    assert len(data["data"]["files"]) == 1
+    assert data["data"]["files"][0]["filename"] == "test-doc.pdf"
     assert mock_ingestion_service.list_documents.call_count == 1
 
 
@@ -83,18 +94,22 @@ def test_list_files_with_prefix(client, mock_ingestion_service):
 
 def test_list_files_empty(client, mock_ingestion_service):
     """Test listing when no files exist."""
-    mock_ingestion_service.list_documents.return_value = FileListResponse(
-        files=[],
-        total_count=0,
-        total_size=0
-    )
+    mock_ingestion_service.list_documents.return_value = {
+        "success": True,
+        "data": FileListResponse(
+            files=[],
+            total_count=0,
+            total_size=0
+        )
+    }
     
     response = client.get("/files")
     
     assert response.status_code == 200
     data = response.json()
-    assert data["total_count"] == 0
-    assert len(data["files"]) == 0
+    assert data["success"] is True
+    assert data["data"]["total_count"] == 0
+    assert len(data["data"]["files"]) == 0
 
 
 def test_list_files_error(client, mock_ingestion_service):
@@ -118,8 +133,10 @@ def test_upload_file_success(client, mock_ingestion_service):
     
     assert response.status_code == 200
     data = response.json()
-    assert data["filename"] == "uploaded.pdf"
-    assert data["size"] == 2048000
+    assert data["success"] is True
+    assert "data" in data
+    assert data["data"]["filename"] == "uploaded.pdf"
+    assert data["data"]["size"] == 2048000
     assert mock_ingestion_service.upload_document.call_count == 1
 
 
@@ -186,8 +203,10 @@ def test_delete_file_success(client, mock_ingestion_service):
     
     assert response.status_code == 200
     data = response.json()
-    assert data["filename"] == "test-doc.pdf"
-    assert data["status"] == "deleted"
+    assert data["success"] is True
+    assert "data" in data
+    assert data["data"]["filename"] == "test-doc.pdf"
+    assert data["data"]["status"] == "deleted"
     assert mock_ingestion_service.delete_document.call_count == 1
 
 
@@ -278,14 +297,18 @@ def test_list_files_response_structure(client, mock_ingestion_service):
     assert response.status_code == 200
     data = response.json()
     
-    # Check required fields
-    assert "files" in data
-    assert "total_count" in data
-    assert "total_size" in data
+    # Check wrapper structure
+    assert data["success"] is True
+    assert "data" in data
+    
+    # Check required fields in data
+    assert "files" in data["data"]
+    assert "total_count" in data["data"]
+    assert "total_size" in data["data"]
     
     # Check file structure
-    if len(data["files"]) > 0:
-        file_obj = data["files"][0]
+    if len(data["data"]["files"]) > 0:
+        file_obj = data["data"]["files"][0]
         assert "filename" in file_obj
         assert "size" in file_obj
         assert "last_modified" in file_obj

@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Annotated
 
-from app.dtos.chat import ChatRequest, ChatResponse
+from app.dtos.routers.chat import ChatRequest, ChatResponse
 from app.services.rag import RAGService
 from app.adapters.bedrock import BedrockAdapter
 from app.utils.config import Config
@@ -26,7 +26,6 @@ def get_rag_service() -> RAGService:
 
 @router.post(
     "",
-    response_model=ChatResponse,
     summary="Query the Knowledge Base",
     description="""
     Send a query to the RAG system and receive an AI-generated answer with citations.
@@ -77,7 +76,7 @@ def get_rag_service() -> RAGService:
 async def query_knowledge_base(
     request: ChatRequest,
     rag_service: Annotated[RAGService, Depends(get_rag_service)]
-) -> ChatResponse:
+) -> dict:
     """
     Process a RAG query and return the answer with citations.
     
@@ -86,7 +85,7 @@ async def query_knowledge_base(
         rag_service: Injected RAG service instance
         
     Returns:
-        ChatResponse with answer, citations, session_id, and model_used
+        Dict with success flag and ChatResponse data
         
     Raises:
         HTTPException: 400 for invalid requests, 500 for server errors
