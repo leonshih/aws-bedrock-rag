@@ -492,6 +492,61 @@ __init__.py              # Package exports
 
 ---
 
+## T
+
+### Tenant
+
+An isolated customer/organization in a multi-tenant system. Each tenant's data is logically separated to ensure data privacy and security.
+
+**In This Project:**
+- Identified by UUID v4 (`tenant_id`)
+- Enforced at middleware layer
+- Isolated via S3 path prefixes (`documents/{tenant_id}/`)
+- Filtered in Bedrock Knowledge Base queries
+
+### Tenant Context
+
+A data model containing tenant identification information, passed through request lifecycle.
+
+**Model:** [`TenantContext`](../app/dtos/common.py)
+
+**Fields:**
+- `tenant_id`: UUID - Unique tenant identifier
+
+**Validation:**
+- Must be valid UUID v4 format
+- Cannot be None or empty
+- Accepts UUID with or without hyphens
+
+**Example:**
+```python
+context = TenantContext(tenant_id="550e8400-e29b-41d4-a716-446655440000")
+```
+
+### Tenant Isolation
+
+Architectural pattern ensuring each tenant's data is completely separated from others.
+
+**Implementation Layers:**
+1. **Storage:** S3 paths prefixed with `{tenant_id}/`
+2. **Retrieval:** Metadata filters in RAG queries
+3. **Middleware:** Automatic tenant extraction from headers
+4. **Validation:** UUID format enforcement
+
+### TenantMissingError
+
+Exception raised when required `X-Tenant-ID` header is missing from HTTP request.
+
+**HTTP Status:** 400 Bad Request
+
+### TenantValidationError
+
+Exception raised when `tenant_id` format is invalid (not a valid UUID).
+
+**HTTP Status:** 422 Unprocessable Entity
+
+---
+
 ## Testing Terminology
 
 ### Test Types

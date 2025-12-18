@@ -97,7 +97,10 @@ DTOs are organized by **architectural layer**, not by domain:
 
 ```
 app/dtos/
-├── common.py              # Base response wrappers
+├── common.py              # Base response wrappers + Tenant context
+│   ├── TenantContext      # Multi-tenant context model (UUID validation)
+│   ├── TenantMissingError
+│   ├── TenantValidationError
 │   ├── SuccessResponse[T]
 │   └── ErrorResponse
 │
@@ -116,6 +119,44 @@ app/dtos/
 - **Type-Safe**: Full type hints for IDE support
 - **Layer-Specific**: DTOs don't cross layer boundaries
 - **Self-Documenting**: JSON schema examples in `Config`
+
+---
+
+## 🏢 Multi-Tenant Architecture (Phase 4)
+
+### Tenant Context Model
+
+```python
+from app.dtos.common import TenantContext
+
+# Tenant identifier with UUID validation
+context = TenantContext(tenant_id="550e8400-e29b-41d4-a716-446655440000")
+```
+
+**Validation Rules:**
+- Must be valid UUID v4 format
+- Accepts UUID with or without hyphens
+- Automatically normalized to standard format
+- Cannot be None or empty
+
+**Exception Handling:**
+- `TenantMissingError`: Raised when `X-Tenant-ID` header is missing
+- `TenantValidationError`: Raised when UUID format is invalid
+
+### Tenant Isolation Strategy (Planned)
+
+**Current Status:** ✅ Model implemented, ⏳ Middleware pending
+
+**Implementation Layers:**
+1. **Middleware Layer** (⏳): Extract and validate `X-Tenant-ID` from HTTP headers
+2. **Storage Layer** (⏳): Enforce S3 path prefix `documents/{tenant_id}/`
+3. **Retrieval Layer** (⏳): Auto-inject tenant filter in Bedrock queries
+4. **Validation Layer** (✅): UUID format enforcement via Pydantic
+
+**Example Flow (Planned):**
+```
+Client Request → Middleware (extract tenant_id) → Router → Service (inject tenant filter) → Adapter (prefix S3 path)
+```
 
 ---
 
@@ -362,6 +403,9 @@ Query
 
 ### Multi-Tenant Isolation
 
+- ✅ **Tenant Context Model:** UUID v4 validated data model ([`TenantContext`](app/dtos/common.py))
+- ✅ **UUID Validation:** Pydantic-based format validation (accepts with/without hyphens)
+- ✅ **Exception Types:** `TenantMissingError`, `TenantValidationError`
 - ⏳ **Tenant ID Validation:** UUID v4 format validation for `X-Tenant-ID` header
 - ⏳ **Mandatory Tenant Header:** Reject requests without valid tenant ID
 - ⏳ **Path Isolation:** Enforce `documents/{tenant_id}/` prefix in S3 operations

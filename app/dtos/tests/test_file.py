@@ -5,6 +5,7 @@ Tests Pydantic validation and serialization for file-related models.
 """
 import pytest
 from datetime import datetime
+from uuid import UUID
 from pydantic import ValidationError
 from app.dtos.routers.ingest import (
     FileMetadata,
@@ -14,6 +15,9 @@ from app.dtos.routers.ingest import (
     FileDeleteResponse,
 )
 
+# Test tenant ID for all test cases
+TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440000"
+
 
 class TestFileMetadata:
     """Tests for FileMetadata model."""
@@ -21,24 +25,28 @@ class TestFileMetadata:
     def test_valid_file_metadata(self):
         """Test creating valid file metadata."""
         metadata = FileMetadata(
+            tenant_id=TEST_TENANT_ID,
             attributes={
                 "author": "Dr. Smith",
                 "year": 2023,
                 "tags": ["medical", "research"]
             }
         )
+        assert metadata.tenant_id == UUID(TEST_TENANT_ID)
         assert metadata.attributes["author"] == "Dr. Smith"
         assert metadata.attributes["year"] == 2023
         assert len(metadata.attributes["tags"]) == 2
     
     def test_empty_metadata(self):
         """Test metadata with no attributes."""
-        metadata = FileMetadata()
+        metadata = FileMetadata(tenant_id=TEST_TENANT_ID)
+        assert metadata.tenant_id == UUID(TEST_TENANT_ID)
         assert metadata.attributes == {}
     
     def test_metadata_with_various_types(self):
         """Test metadata supports various value types."""
         metadata = FileMetadata(
+            tenant_id=TEST_TENANT_ID,
             attributes={
                 "string": "value",
                 "number": 42,
@@ -47,6 +55,7 @@ class TestFileMetadata:
                 "nested": {"key": "value"}
             }
         )
+        assert metadata.tenant_id == UUID(TEST_TENANT_ID)
         assert metadata.attributes["string"] == "value"
         assert metadata.attributes["number"] == 42
         assert metadata.attributes["boolean"] is True
@@ -58,23 +67,29 @@ class TestFileUploadRequest:
     def test_valid_upload_request(self):
         """Test creating valid upload request."""
         request = FileUploadRequest(
+            tenant_id=TEST_TENANT_ID,
             metadata=FileMetadata(
+                tenant_id=TEST_TENANT_ID,
                 attributes={"author": "John Doe", "year": 2023}
             )
         )
+        assert request.tenant_id == UUID(TEST_TENANT_ID)
         assert request.metadata.attributes["author"] == "John Doe"
     
     def test_upload_request_without_metadata(self):
         """Test upload request without metadata."""
-        request = FileUploadRequest()
+        request = FileUploadRequest(tenant_id=TEST_TENANT_ID)
+        assert request.tenant_id == UUID(TEST_TENANT_ID)
         assert request.metadata is None
     
     def test_upload_request_serialization(self):
         """Test serialization of upload request."""
         request = FileUploadRequest(
-            metadata=FileMetadata(attributes={"key": "value"})
+            tenant_id=TEST_TENANT_ID,
+            metadata=FileMetadata(tenant_id=TEST_TENANT_ID, attributes={"key": "value"})
         )
         data = request.model_dump()
+        assert data["tenant_id"] == UUID(TEST_TENANT_ID)
         assert data["metadata"]["attributes"]["key"] == "value"
 
 
