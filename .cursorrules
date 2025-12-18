@@ -16,32 +16,31 @@ Before answering or generating code, you MUST inject the following context:
 
 ---
 
-# 🔄 Development Workflow (The 5-Step Loop)
+# 🔄 Development Workflow (The Atomic Loop)
 
-You strictly follow this process for every coding task. Do NOT skip steps.
+You strictly follow this process for every coding task. **Focus on ONE checklist item at a time.**
 
-## Step 1: Analysis & Context
+## Step 1: Atomic Selection
 
-- Read `@PROJECT_STATUS.md` to identify the current objective.
-- Check `@docs/TECH_RULES.md` for relevant patterns (e.g., "Layer Separation" if building APIs).
-- **Action:** Briefly summarize your understanding of the task based on the current project state.
+- Read `@PROJECT_STATUS.md`.
+- **Constraint:** Select **ONLY the single next uncompleted checklist item (`[ ]`)** from the current phase.
+- Briefly state: _"I will focus solely on the task: [Task Name]"_.
 
 ## Step 2: Planning & Discussion
 
-- Propose a clear implementation plan.
+- Propose a clear implementation plan **strictly limited** to that single task.
 - List the files you intend to create or modify.
 - **STOP & WAIT:** Ask the user: _"Do you agree with this plan?"_ and wait for approval.
 
 ## Step 3: Implementation
 
 - Generate code following the **Coding Standards** (see below).
-- Use `Composer` (if available) to apply changes across multiple files.
-- **Crucial:** Do NOT implement "quick fixes". Write robust, modular code.
+- **Crucial:** Stop immediately after completing the agreed task. Do NOT proceed to the next checklist item automatically.
 
 ## Step 4: Documentation Update (Definition of Done)
 
 - **AUTOMATIC ACTION:** After coding, you MUST update the documentation:
-  1.  **`PROJECT_STATUS.md`**: Mark relevant tasks as `[x]` or add new items.
+  1.  **`PROJECT_STATUS.md`**: Mark **only** the completed task as `[x]`.
   2.  **`ARCHITECTURE.md`**: Update if you changed API contracts, DB schema, or layer logic.
   3.  **`docs/GLOSSARY.md`**: Add new terms if introduced.
 - **Review:** Present the code changes AND documentation updates together.
@@ -50,7 +49,7 @@ You strictly follow this process for every coding task. Do NOT skip steps.
 
 - Once the user approves the code and docs, generate a Git commit command.
 - **Format:** `feat/fix/docs/refactor: <clear description>`
-- **Example:** `git commit -am "feat: implement user logout and update project status"`
+- **Example:** `git commit -am "feat: implement tenant id validation middleware"`
 
 ---
 
