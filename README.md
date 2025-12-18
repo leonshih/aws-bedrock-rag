@@ -5,16 +5,14 @@
 ![Docker](https://img.shields.io/badge/Docker-Container-blue?logo=docker&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Development-yellow)
 
-A production-ready Retrieval-Augmented Generation (RAG) system designed for AWS.
-
 This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG pipeline (Ingestion, Embedding, Retrieval) and hosts the **FastAPI** backend on **Amazon ECS (Fargate)**.
 
 ---
 
 ## 🚦 Current Status
 
-> **Last Updated:** 2025-01-15  
-> **Current Phase:** Phase 3 Complete ✅ | Phase 4 Next 🚀  
+> **Last Updated:** 2025-12-18  
+> **Current Phase:** Phase 3 Complete ✅ | **Phase 3.5 (Multi-Tenant) In Progress** 🚧 | Phase 4 Next 🚀  
 > **Mock Mode:** Enabled for local development without AWS credentials  
 > **Test Coverage:** 148/150 tests passing (98.7% - 2 AWS config failures unrelated to code)
 
@@ -124,6 +122,144 @@ This project utilizes **Knowledge Bases for Amazon Bedrock** to manage the RAG p
   - [x] Updated all test mocks to match new response structure.
   - [x] Removed obsolete tests for refactored private methods.
   - [x] 2 failing tests are AWS configuration issues (model access), not code issues.
+
+### Phase 3.5: Multi-Tenant Architecture 🔐 (In Progress)
+
+**Goal:** Implement comprehensive multi-tenant support with mandatory tenant isolation for all operations.
+
+**Architecture Requirements:**
+
+- **Tenant Isolation**: All RAG queries and document operations must include `tenant_id` for data segregation
+- **Tenant ID Source**: HTTP Header (`X-Tenant-ID`)
+- **Tenant ID Format**: UUID (e.g., `550e8400-e29b-41d4-a716-446655440000`)
+- **No Backward Compatibility**: Clean break, all existing APIs require tenant context
+- **No Tenant Management**: Focus on tenant isolation only, no CRUD for tenants
+
+#### Implementation Plan
+
+**Step 1: Data Models & Validation** 📋
+
+- [x] **Tenant DTOs**:
+  - [x] Add `TenantContext` model in `dtos/common.py`
+  - [x] Add UUID validation with Pydantic
+  - [x] Create `TenantValidationError` exception
+- [x] **Update Request DTOs**:
+  - [x] `ChatRequest`: Add mandatory `tenant_id: UUID` field
+  - [x] `FileMetadata`: Add mandatory `tenant_id: UUID` field
+  - [x] Update all DTO examples in docstrings
+- [x] **Configuration**:
+  - [x] Add `TENANT_HEADER_NAME` to `config.py` (default: `X-Tenant-ID`)
+  - [x] Add tenant ID validation regex pattern
+
+**Step 2: Middleware & Request Context** 🔒
+
+- [ ] **Tenant Middleware**:
+  - [ ] Create `middleware/tenant_middleware.py`
+  - [ ] Extract `X-Tenant-ID` from request headers
+  - [ ] Validate UUID format (RFC 4122)
+  - [ ] Inject `tenant_id` into `request.state.tenant_id`
+  - [ ] Return 400 if header missing or invalid format
+- [ ] **Exception Handlers**:
+  - [ ] Add `TenantValidationError` handler (400 Bad Request)
+  - [ ] Add `TenantMissingError` handler (400 Bad Request)
+  - [ ] Update error response format with tenant context
+
+**Step 3: Service Layer - Mandatory Tenant Filtering** 🛡️
+
+- [ ] **RAG Service** (`services/rag/rag_service.py`):
+  - [ ] `query()`: Extract `tenant_id` from request
+  - [ ] Auto-inject `tenant_id` filter (equals operator) into metadata filters
+  - [ ] Prevent filter bypass (tenant_id filter is immutable)
+  - [ ] Validate tenant_id exists before Bedrock call
+  - [ ] Add logging with tenant context
+- [ ] **Ingestion Service** (`services/ingestion/ingestion_service.py`):
+  - [ ] Update S3 path structure: `documents/{tenant_id}/{filename}`
+  - [ ] `upload_document()`: Require `tenant_id` parameter, auto-inject into metadata
+  - [ ] `list_documents()`: Filter by tenant prefix only
+  - [ ] `delete_document()`: Verify file belongs to tenant before deletion
+  - [ ] Add tenant isolation tests
+
+**Step 4: Adapter Layer - Tenant-Aware Storage** 🔧
+
+- [ ] **S3 Adapter** (`adapters/s3/s3_adapter.py`):
+  - [ ] Update all S3 operations to use tenant-prefixed paths
+  - [ ] `upload_file()`: Construct key with `documents/{tenant_id}/` prefix
+  - [ ] `list_files()`: Filter with tenant prefix
+  - [ ] `get_file()`: Validate tenant in path
+  - [ ] Update mock storage to support tenant isolation
+- [ ] **Bedrock Adapter** (`adapters/bedrock/bedrock_adapter.py`):
+  - [ ] Ensure metadata filters correctly pass tenant_id
+  - [ ] Validate OpenSearch filter format for tenant isolation
+  - [ ] Add debug logging for tenant filter injection
+
+**Step 5: Router Layer - API Updates** 🌐
+
+- [ ] **Chat Router** (`routers/chat/chat_router.py`):
+  - [ ] Add `X-Tenant-ID` header requirement to OpenAPI spec
+  - [ ] Extract tenant_id from `request.state.tenant_id`
+  - [ ] Pass tenant_id to `ChatRequest`
+  - [ ] Update endpoint documentation with header examples
+  - [ ] Add 400 error response documentation
+- [ ] **Ingest Router** (`routers/ingest/ingest_router.py`):
+  - [ ] Add `X-Tenant-ID` header to all endpoints (GET, POST, DELETE)
+  - [ ] Extract tenant_id from middleware
+  - [ ] Pass tenant_id to all service methods
+  - [ ] Update upload/list/delete operations with tenant context
+  - [ ] Update OpenAPI documentation
+
+**Step 6: Comprehensive Testing** ✅
+
+- [ ] **Unit Tests Update**:
+  - [ ] Update all existing tests to include `tenant_id`
+  - [ ] Mock `X-Tenant-ID` header in test clients
+  - [ ] Test tenant middleware validation logic
+  - [ ] Test UUID format validation
+- [ ] **Tenant Isolation Tests**:
+  - [ ] Test cross-tenant query isolation (Tenant A cannot see Tenant B data)
+  - [ ] Test cross-tenant file access denial
+  - [ ] Test tenant_id injection into metadata filters
+  - [ ] Test S3 path isolation
+- [ ] **Error Handling Tests**:
+  - [ ] Test missing `X-Tenant-ID` header (400)
+  - [ ] Test invalid UUID format (400)
+  - [ ] Test empty tenant_id (400)
+  - [ ] Test malformed header values
+- [ ] **Integration Tests**:
+  - [ ] End-to-end upload → query → delete with tenant isolation
+  - [ ] Multi-tenant concurrent operations
+  - [ ] Tenant data segregation verification
+
+**Step 7: Documentation & Migration** 📚
+
+- [ ] **API Documentation**:
+  - [ ] Update README with tenant architecture overview
+  - [ ] Add tenant_id header examples to all API calls
+  - [ ] Document error codes for tenant validation
+  - [ ] Add tenant isolation diagram
+- [ ] **Migration Guide**:
+  - [ ] Document breaking changes (all APIs require `X-Tenant-ID`)
+  - [ ] Provide S3 data migration script (`documents/file.pdf` → `documents/{tenant_id}/file.pdf`)
+  - [ ] Metadata update strategy for existing documents
+  - [ ] Client integration guide with header examples
+
+#### Key Design Decisions
+
+| Aspect                     | Decision                           | Rationale                                                      |
+| -------------------------- | ---------------------------------- | -------------------------------------------------------------- |
+| **Tenant ID Source**       | HTTP Header (`X-Tenant-ID`)        | Stateless, easy to integrate with API gateways and auth layers |
+| **Tenant ID Format**       | UUID v4                            | Standard, globally unique, prevents enumeration attacks        |
+| **S3 Structure**           | `documents/{tenant_id}/{filename}` | Clear isolation, supports S3 prefix filtering                  |
+| **Backward Compatibility** | None (breaking change)             | Clean architecture, no legacy code paths                       |
+| **Tenant Management**      | Out of scope                       | Focus on isolation only                                        |
+| **Error Strategy**         | 400 for validation errors          | Client-side issues, clear error messages                       |
+
+#### Security Considerations
+
+- ✅ **Mandatory Filtering**: All queries automatically filtered by tenant_id
+- ✅ **Immutable Filters**: Tenant filter cannot be removed or modified by clients
+- ✅ **Path Isolation**: S3 paths enforce tenant boundaries
+- ✅ **Validation**: UUID format validation prevents injection attacks
+- ✅ **Logging**: All operations logged with tenant context for audit trails
 
 ### Phase 4: Containerization & Deployment 🚢
 
@@ -436,13 +572,13 @@ Key configuration in `.env`:
 APP_ENV=dev                    # dev, staging, production
 
 # AWS Configuration
-AWS_REGION=ap-northeast-1
+AWS_REGION=us-east-1          # Your AWS region
 AWS_PROFILE=default           # (optional) AWS CLI profile
 
 # Bedrock Configuration
 BEDROCK_KB_ID=your-kb-id-here
 BEDROCK_DATA_SOURCE_ID=your-data-source-id-here
-BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0
+BEDROCK_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
 
 # S3 Configuration
 S3_BUCKET_NAME=your-bucket-name-here
@@ -451,3 +587,136 @@ S3_BUCKET_NAME=your-bucket-name-here
 MOCK_MODE=true                # Enable mock mode for local development without AWS
 LOG_LEVEL=INFO
 ```
+
+#### Model ID Configuration
+
+**IMPORTANT**: AWS Bedrock requires **Inference Profile IDs** for Claude 3.5 models in most regions.
+
+**Correct Format** (Cross-Region Inference Profile):
+
+```bash
+# For US regions (us-east-1, us-west-2, etc.)
+BEDROCK_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
+
+# For EU regions (eu-west-1, eu-central-1, etc.)
+BEDROCK_MODEL_ID=eu.anthropic.claude-3-5-sonnet-20241022-v2:0
+```
+
+**Available Models**:
+
+- `us.anthropic.claude-3-5-sonnet-20241022-v2:0` - Claude 3.5 Sonnet v2 (Recommended)
+- `us.anthropic.claude-3-5-sonnet-20240620-v1:0` - Claude 3.5 Sonnet v1
+- `anthropic.claude-3-opus-20240229-v1:0` - Claude 3 Opus (Direct model ID)
+- `anthropic.claude-3-sonnet-20240229-v1:0` - Claude 3 Sonnet (Direct model ID)
+- `anthropic.claude-3-haiku-20240307-v1:0` - Claude 3 Haiku (Direct model ID)
+
+**Note**: Newer Claude models (3.5 series) require inference profiles. Older Claude 3 models can use direct model IDs.
+
+---
+
+## 🔐 Multi-Tenant Architecture
+
+### Overview
+
+All API endpoints require tenant isolation through the `X-Tenant-ID` header. This ensures complete data segregation between tenants at all layers (storage, retrieval, and generation).
+
+### Tenant ID Requirements
+
+- **Format**: UUID v4 (e.g., `550e8400-e29b-41d4-a716-446655440000`)
+- **Source**: HTTP Header `X-Tenant-ID`
+- **Validation**: RFC 4122 compliant UUID
+- **Mandatory**: All API requests must include valid tenant ID
+
+### API Usage Examples
+
+#### Chat API with Tenant ID
+
+```bash
+curl -X POST "http://localhost:8000/chat" \
+  -H "X-Tenant-ID: 550e8400-e29b-41d4-a716-446655440000" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What are the benefits of RAG?",
+    "max_results": 5
+  }'
+```
+
+#### File Upload with Tenant ID
+
+```bash
+curl -X POST "http://localhost:8000/files" \
+  -H "X-Tenant-ID: 550e8400-e29b-41d4-a716-446655440000" \
+  -F "file=@document.pdf" \
+  -F 'metadata={"category": "research", "year": 2024}'
+```
+
+#### List Files with Tenant ID
+
+```bash
+curl -X GET "http://localhost:8000/files" \
+  -H "X-Tenant-ID: 550e8400-e29b-41d4-a716-446655440000"
+```
+
+### Data Isolation
+
+**S3 Storage Structure**:
+
+```
+s3://bucket-name/
+└── documents/
+    ├── 550e8400-e29b-41d4-a716-446655440000/  # Tenant A
+    │   ├── document1.pdf
+    │   ├── document1.pdf.metadata.json
+    │   └── document2.pdf
+    └── 660f9500-f39c-51e5-b827-557766551111/  # Tenant B
+        ├── document3.pdf
+        └── document3.pdf.metadata.json
+```
+
+**Query Filtering**:
+
+- All RAG queries automatically filter by `tenant_id` in metadata
+- Tenant filter is immutable and cannot be bypassed
+- OpenSearch queries include: `{"equals": {"key": "tenant_id", "value": "<uuid>"}}`
+
+### Error Responses
+
+**Missing Tenant ID**:
+
+```json
+{
+  "success": false,
+  "error": {
+    "type": "TenantMissingError",
+    "message": "X-Tenant-ID header is required",
+    "detail": null
+  }
+}
+```
+
+**HTTP Status**: 400 Bad Request
+
+**Invalid Tenant ID Format**:
+
+```json
+{
+  "success": false,
+  "error": {
+    "type": "TenantValidationError",
+    "message": "Invalid tenant ID format. Must be a valid UUID",
+    "detail": "Provided value: 'invalid-id'"
+  }
+}
+```
+
+**HTTP Status**: 400 Bad Request
+
+### Security Features
+
+✅ **Automatic Filtering**: Tenant ID automatically injected into all queries  
+✅ **Path Isolation**: S3 operations restricted to tenant-specific prefixes  
+✅ **Immutable Context**: Tenant ID cannot be modified within request lifecycle  
+✅ **Audit Logging**: All operations logged with tenant context  
+✅ **No Cross-Tenant Access**: Physical and logical data isolation
+
+---

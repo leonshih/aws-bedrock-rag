@@ -34,6 +34,10 @@ class Config:
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     MOCK_MODE: bool = os.getenv("MOCK_MODE", "true").lower() == "true"
     
+    # Tenant Configuration
+    TENANT_HEADER_NAME: str = os.getenv("TENANT_HEADER_NAME", "X-Tenant-ID")
+    TENANT_ID_REQUIRED: bool = os.getenv("TENANT_ID_REQUIRED", "true").lower() == "true"
+    
     @classmethod
     def is_production(cls) -> bool:
         """Check if running in production environment."""

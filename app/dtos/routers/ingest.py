@@ -4,6 +4,7 @@ File DTOs for document management
 Defines request/response models for file upload/list/delete endpoints.
 """
 from typing import Optional, Dict, Any, List
+from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, Field
 
@@ -11,6 +12,11 @@ from pydantic import BaseModel, Field
 class FileMetadata(BaseModel):
     """Custom metadata attributes for uploaded documents."""
     
+    tenant_id: UUID = Field(
+        ...,
+        description="Tenant identifier (UUID v4) - Required for data isolation",
+        examples=["550e8400-e29b-41d4-a716-446655440000"]
+    )
     attributes: Dict[str, Any] = Field(
         default_factory=dict,
         description="Custom key-value metadata (e.g., author, year, category, tags)"
@@ -19,6 +25,7 @@ class FileMetadata(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
                 "attributes": {
                     "author": "Dr. Smith",
                     "year": 2023,
@@ -32,6 +39,11 @@ class FileMetadata(BaseModel):
 class FileUploadRequest(BaseModel):
     """Request model for file upload (used with multipart/form-data)."""
     
+    tenant_id: UUID = Field(
+        ...,
+        description="Tenant identifier (UUID v4) - Required for data isolation",
+        examples=["550e8400-e29b-41d4-a716-446655440000"]
+    )
     metadata: Optional[FileMetadata] = Field(
         default=None,
         description="Custom metadata to attach to the document"
@@ -40,7 +52,9 @@ class FileUploadRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
                 "metadata": {
+                    "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
                     "attributes": {
                         "author": "Dr. Smith",
                         "year": 2023,
