@@ -41,9 +41,10 @@ class RAGService:
         """
         logger.info(f"Processing RAG query: '{request.query[:100]}...', filters={len(request.metadata_filters or [])}, max_results={request.max_results}")
         
-        # Build model ARN
+        # Use model ID directly (supports both inference profiles and direct model IDs)
+        # For inference profiles: us.anthropic.claude-3-5-sonnet-20241022-v2:0
+        # For direct models: anthropic.claude-3-opus-20240229-v1:0
         model_id = request.model_id or self.config.BEDROCK_MODEL_ID
-        model_arn = f"arn:aws:bedrock:{self.config.AWS_REGION}::foundation-model/{model_id}"
         
         # Convert metadata filters to Bedrock format
         retrieval_config = None
@@ -54,7 +55,7 @@ class RAGService:
         bedrock_response = self.bedrock_adapter.retrieve_and_generate(
             query=request.query,
             kb_id=self.config.BEDROCK_KB_ID,
-            model_arn=model_arn,
+            model_arn=model_id,  # Pass model_id directly, adapter will handle it
             retrieval_config=retrieval_config
         )
         

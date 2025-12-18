@@ -43,12 +43,17 @@ class TestRAGService:
     @patch('app.services.rag.rag_service.BedrockAdapter')
     def test_query_basic(self, mock_bedrock_adapter_class, mock_config):
         """Test basic query without filters."""
+        from app.dtos.adapters.bedrock import BedrockRAGResult
+        
         # Setup mock adapter
         mock_adapter = Mock()
         mock_adapter.retrieve_and_generate.return_value = {
-            "output": {"text": "This is the answer."},
-            "citations": [],
-            "sessionId": "session-123"
+            "success": True,
+            "data": BedrockRAGResult(
+                answer="This is the answer.",
+                session_id="session-123",
+                references=[]
+            )
         }
         mock_bedrock_adapter_class.return_value = mock_adapter
         
@@ -77,10 +82,16 @@ class TestRAGService:
     @patch('app.services.rag.rag_service.BedrockAdapter')
     def test_query_with_custom_model(self, mock_bedrock_adapter_class, mock_config):
         """Test query with custom model override."""
+        from app.dtos.adapters.bedrock import BedrockRAGResult
+        
         mock_adapter = Mock()
         mock_adapter.retrieve_and_generate.return_value = {
-            "output": {"text": "Answer"},
-            "citations": []
+            "success": True,
+            "data": BedrockRAGResult(
+                answer="Answer",
+                session_id="session-456",
+                references=[]
+            )
         }
         mock_bedrock_adapter_class.return_value = mock_adapter
         
@@ -192,110 +203,29 @@ class TestRAGService:
         config = rag_service._build_retrieval_config([])
         assert config == {}
     
-    def test_extract_answer(self, rag_service):
-        """Test extracting answer from Bedrock response."""
-        bedrock_response = {
-            "output": {
-                "text": "This is the generated answer."
-            }
-        }
-        answer = rag_service._extract_answer(bedrock_response)
-        assert answer == "This is the generated answer."
-    
-    def test_extract_answer_missing_output(self, rag_service):
-        """Test extracting answer when output is missing."""
-        bedrock_response = {}
-        answer = rag_service._extract_answer(bedrock_response)
-        assert answer == ""
-    
-    def test_parse_citations(self, rag_service):
-        """Test parsing citations from Bedrock response."""
-        bedrock_response = {
-            "citations": [
-                {
-                    "retrievedReferences": [
-                        {
-                            "content": {
-                                "text": "Aspirin is a pain reliever."
-                            },
-                            "location": {
-                                "type": "S3",
-                                "s3Location": {
-                                    "uri": "s3://bucket/documents/aspirin_guide.pdf"
-                                }
-                            },
-                            "metadata": {
-                                "score": 0.95
-                            }
-                        }
-                    ]
-                }
-            ]
-        }
-        
-        citations = rag_service._parse_citations(bedrock_response)
-        
-        assert len(citations) == 1
-        assert citations[0].content == "Aspirin is a pain reliever."
-        assert citations[0].document_title == "aspirin_guide.pdf"
-        assert citations[0].location["s3_uri"] == "s3://bucket/documents/aspirin_guide.pdf"
-        assert citations[0].score == 0.95
-    
-    def test_parse_citations_multiple_references(self, rag_service):
-        """Test parsing multiple citations."""
-        bedrock_response = {
-            "citations": [
-                {
-                    "retrievedReferences": [
-                        {
-                            "content": {"text": "Reference 1"},
-                            "location": {
-                                "type": "S3",
-                                "s3Location": {"uri": "s3://bucket/doc1.pdf"}
-                            }
-                        },
-                        {
-                            "content": {"text": "Reference 2"},
-                            "location": {
-                                "type": "S3",
-                                "s3Location": {"uri": "s3://bucket/doc2.pdf"}
-                            }
-                        }
-                    ]
-                }
-            ]
-        }
-        
-        citations = rag_service._parse_citations(bedrock_response)
-        assert len(citations) == 2
-        assert citations[0].content == "Reference 1"
-        assert citations[1].content == "Reference 2"
-    
-    def test_parse_citations_empty(self, rag_service):
-        """Test parsing citations when none exist."""
-        bedrock_response = {"citations": []}
-        citations = rag_service._parse_citations(bedrock_response)
-        assert citations == []
+    # NOTE: The following tests for private methods (_extract_answer, _parse_citations) 
+    # have been removed as these methods were refactored into the main query flow.
+    # The functionality is now tested through the query integration tests above.
     
     @patch('app.services.rag.rag_service.BedrockAdapter')
     def test_query_with_filters_integration(self, mock_bedrock_adapter_class, mock_config):
         """Test full query flow with metadata filters."""
+        from app.dtos.adapters.bedrock import BedrockRAGResult, BedrockRetrievalReference
+        
         mock_adapter = Mock()
         mock_adapter.retrieve_and_generate.return_value = {
-            "output": {"text": "Filtered answer."},
-            "citations": [
-                {
-                    "retrievedReferences": [
-                        {
-                            "content": {"text": "Source text"},
-                            "location": {
-                                "type": "S3",
-                                "s3Location": {"uri": "s3://bucket/doc.pdf"}
-                            }
-                        }
-                    ]
-                }
-            ]
+            "success": True,
+            "data": BedrockRAGResult(
+                answer="Filtered answer.",
+                session_id="session-789",
+                references=[
+                    BedrockRetrievalReference(
+                        content="Source text",
+                        s3_uri="s3://bucket/doc.pdf",
+                        score=0.85
+                    )
+                ]
+            )
         }
         mock_bedrock_adapter_class.return_value = mock_adapter
         

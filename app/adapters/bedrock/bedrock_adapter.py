@@ -61,8 +61,11 @@ class BedrockAdapter:
         if self.mock_mode:
             return self._mock_retrieve_and_generate(query, kb_id)
         
+        # Use model_arn if provided, otherwise use model_id directly
+        # For cross-region inference profiles, AWS expects the model ID, not full ARN
+        # For standard regional models, both model ID and ARN work
         if not model_arn:
-            model_arn = f"arn:aws:bedrock:{self.region}::foundation-model/{self.model_id}"
+            model_arn = self.model_id
         
         try:
             kb_config = {

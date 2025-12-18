@@ -132,8 +132,13 @@ class TestIngestionService:
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
     def test_list_documents_empty(self, mock_bedrock_adapter_class, mock_s3_adapter_class, mock_config):
         """Test listing documents when bucket is empty."""
+        from app.dtos.adapters.s3 import S3ListResult
+        
         mock_s3 = Mock()
-        mock_s3.list_files.return_value = []
+        mock_s3.list_files.return_value = {
+            "success": True,
+            "data": S3ListResult(objects=[], total_count=0, total_size=0)
+        }
         mock_s3_adapter_class.return_value = mock_s3
         mock_bedrock_adapter_class.return_value = Mock()
         
@@ -149,19 +154,30 @@ class TestIngestionService:
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
     def test_list_documents_with_files(self, mock_bedrock_adapter_class, mock_s3_adapter_class, mock_config):
         """Test listing documents with files."""
+        from app.dtos.adapters.s3 import S3ListResult, S3ObjectInfo
+        
         mock_s3 = Mock()
-        mock_s3.list_files.return_value = [
-            {
-                "Key": "documents/doc1.pdf",
-                "Size": 1024,
-                "LastModified": datetime(2023, 12, 1)
-            },
-            {
-                "Key": "documents/doc2.pdf",
-                "Size": 2048,
-                "LastModified": datetime(2023, 12, 2)
-            }
-        ]
+        mock_s3.list_files.return_value = {
+            "success": True,
+            "data": S3ListResult(
+                objects=[
+                    S3ObjectInfo(
+                        key="documents/doc1.pdf",
+                        size=1024,
+                        last_modified="2023-12-01T00:00:00",
+                        etag="etag1"
+                    ),
+                    S3ObjectInfo(
+                        key="documents/doc2.pdf",
+                        size=2048,
+                        last_modified="2023-12-02T00:00:00",
+                        etag="etag2"
+                    )
+                ],
+                total_count=2,
+                total_size=3072
+            )
+        }
         mock_s3_adapter_class.return_value = mock_s3
         mock_bedrock_adapter_class.return_value = Mock()
         
@@ -179,19 +195,30 @@ class TestIngestionService:
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
     def test_list_documents_filters_metadata_files(self, mock_bedrock_adapter_class, mock_s3_adapter_class, mock_config):
         """Test that .metadata.json files are filtered from list."""
+        from app.dtos.adapters.s3 import S3ListResult, S3ObjectInfo
+        
         mock_s3 = Mock()
-        mock_s3.list_files.return_value = [
-            {
-                "Key": "documents/doc1.pdf",
-                "Size": 1024,
-                "LastModified": datetime(2023, 12, 1)
-            },
-            {
-                "Key": "documents/doc1.pdf.metadata.json",
-                "Size": 256,
-                "LastModified": datetime(2023, 12, 1)
-            }
-        ]
+        mock_s3.list_files.return_value = {
+            "success": True,
+            "data": S3ListResult(
+                objects=[
+                    S3ObjectInfo(
+                        key="documents/doc1.pdf",
+                        size=1024,
+                        last_modified="2023-12-01T00:00:00",
+                        etag="etag1"
+                    ),
+                    S3ObjectInfo(
+                        key="documents/doc1.pdf.metadata.json",
+                        size=256,
+                        last_modified="2023-12-01T00:00:00",
+                        etag="etag2"
+                    )
+                ],
+                total_count=2,
+                total_size=1280
+            )
+        }
         mock_s3.get_file.return_value = json.dumps({
             "metadataAttributes": {"author": "Dr. Smith"}
         }).encode('utf-8')

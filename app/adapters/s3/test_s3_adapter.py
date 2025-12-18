@@ -69,11 +69,12 @@ class TestS3Adapter:
         adapter.upload_file(content1, bucket, "file1.txt")
         adapter.upload_file(content2, bucket, "file2.txt")
         
-        files = adapter.list_files(bucket)
+        response = adapter.list_files(bucket)
+        files = response["data"].objects
         
         assert len(files) == 2
-        assert any(f['Key'] == 'file1.txt' for f in files)
-        assert any(f['Key'] == 'file2.txt' for f in files)
+        assert any(f.key == 'file1.txt' for f in files)
+        assert any(f.key == 'file2.txt' for f in files)
     
     def test_list_files_with_prefix(self, adapter):
         """Test listing files with prefix filter."""
@@ -83,10 +84,11 @@ class TestS3Adapter:
         adapter.upload_file(b"Content 2", bucket, "docs/file2.txt")
         adapter.upload_file(b"Content 3", bucket, "other/file3.txt")
         
-        files = adapter.list_files(bucket, prefix="docs/")
+        response = adapter.list_files(bucket, prefix="docs/")
+        files = response["data"].objects
         
         assert len(files) == 2
-        assert all(f['Key'].startswith('docs/') for f in files)
+        assert all(f.key.startswith('docs/') for f in files)
     
     def test_delete_file_success(self, adapter):
         """Test file deletion."""
@@ -98,17 +100,18 @@ class TestS3Adapter:
         adapter.upload_file(content, bucket, key)
         
         # Verify it exists
-        files = adapter.list_files(bucket)
-        assert len(files) == 1
+        list_response = adapter.list_files(bucket)
+        assert len(list_response["data"].objects) == 1
         
         # Delete file
         response = adapter.delete_file(bucket, key)
         
-        assert response['ResponseMetadata']['HTTPStatusCode'] == 204
+        assert response["success"] is True
+        assert response["data"].deleted is True
         
         # Verify it's deleted
-        files = adapter.list_files(bucket)
-        assert len(files) == 0
+        list_response = adapter.list_files(bucket)
+        assert len(list_response["data"].objects) == 0
     
     def test_delete_nonexistent_file(self, adapter):
         """Test deleting non-existent file doesn't raise error."""
@@ -147,11 +150,12 @@ class TestS3Adapter:
         
         adapter.upload_file(content, bucket, key)
         
-        files = adapter.list_files(bucket)
+        response = adapter.list_files(bucket)
+        files = response["data"].objects
         
         assert len(files) == 1
-        assert files[0]['Size'] == 5
-        assert files[0]['Key'] == key
+        assert files[0].size == 5
+        assert files[0].key == key
     
     def test_multiple_buckets_isolated(self, adapter):
         """Test files in different buckets are isolated."""
@@ -161,10 +165,12 @@ class TestS3Adapter:
         adapter.upload_file(b"Content 1", bucket1, "file1.txt")
         adapter.upload_file(b"Content 2", bucket2, "file2.txt")
         
-        files1 = adapter.list_files(bucket1)
-        files2 = adapter.list_files(bucket2)
+        response1 = adapter.list_files(bucket1)
+        response2 = adapter.list_files(bucket2)
+        files1 = response1["data"].objects
+        files2 = response2["data"].objects
         
         assert len(files1) == 1
         assert len(files2) == 1
-        assert files1[0]['Key'] == 'file1.txt'
-        assert files2[0]['Key'] == 'file2.txt'
+        assert files1[0].key == 'file1.txt'
+        assert files2[0].key == 'file2.txt'
