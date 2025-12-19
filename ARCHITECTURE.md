@@ -134,12 +134,14 @@ context = TenantContext(tenant_id="550e8400-e29b-41d4-a716-446655440000")
 ```
 
 **Validation Rules:**
+
 - Must be valid UUID v4 format
 - Accepts UUID with or without hyphens
 - Automatically normalized to standard format
 - Cannot be None or empty
 
 **Exception Handling:**
+
 - `TenantMissingError`: Raised when `X-Tenant-ID` header is missing
 - `TenantValidationError`: Raised when UUID format is invalid
 
@@ -148,12 +150,14 @@ context = TenantContext(tenant_id="550e8400-e29b-41d4-a716-446655440000")
 **Current Status:** ✅ Model implemented, ⏳ Middleware pending
 
 **Implementation Layers:**
+
 1. **Middleware Layer** (⏳): Extract and validate `X-Tenant-ID` from HTTP headers
 2. **Storage Layer** (⏳): Enforce S3 path prefix `documents/{tenant_id}/`
 3. **Retrieval Layer** (⏳): Auto-inject tenant filter in Bedrock queries
 4. **Validation Layer** (✅): UUID format enforcement via Pydantic
 
 **Example Flow (Planned):**
+
 ```
 Client Request → Middleware (extract tenant_id) → Router → Service (inject tenant filter) → Adapter (prefix S3 path)
 ```
@@ -308,8 +312,7 @@ app/
 
 - **Unit Tests:** Mock all external dependencies (AWS, file system)
 - **Integration Tests:** Real service instantiation, no mocks
-- **Fast Execution:** All unit tests run in ~0.5s
-- **High Coverage:** 98.7% test pass rate (148/150 tests)
+- **High Coverage:** Aim for >90% coverage on core modules
 
 ---
 
