@@ -6,6 +6,8 @@ from fastapi.exceptions import RequestValidationError, HTTPException
 from botocore.exceptions import ClientError, BotoCoreError, ParamValidationError
 import logging
 
+from app.dtos.common import TenantMissingError, TenantValidationError
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,6 +18,8 @@ def register_exception_handlers(app: FastAPI) -> None:
     Args:
         app: FastAPI application instance
     """
+    app.add_exception_handler(TenantMissingError, tenant_missing_exception_handler)
+    app.add_exception_handler(TenantValidationError, tenant_validation_exception_handler)
     app.add_exception_handler(ParamValidationError, param_validation_exception_handler)
     app.add_exception_handler(ClientError, aws_exception_handler)
     app.add_exception_handler(BotoCoreError, aws_exception_handler)
@@ -24,6 +28,72 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(FileNotFoundError, not_found_exception_handler)
     app.add_exception_handler(ValueError, value_error_exception_handler)
     app.add_exception_handler(Exception, general_exception_handler)
+
+
+async def tenant_missing_exception_handler(request: Request, exc: TenantMissingError) -> JSONResponse:
+    """
+    Handle TenantMissingError exceptions.
+    
+    Args:
+        request: FastAPI request object
+        exc: TenantMissingError exception
+        
+    Returns:
+        JSONResponse with 400 status
+    """
+    logger.warning(
+        f"Tenant ID missing: {exc.message}",
+        extra={
+            "path": request.url.path,
+            "method": request.method
+        }
+    )
+    
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={
+            "success": False,
+            "error": {
+                "type": "tenant_missing_error",
+                "message": exc.message,
+                "path": request.url.path
+            }
+        }
+    )
+
+
+async def tenant_validation_exception_handler(request: Request, exc: TenantValidationError) -> JSONResponse:
+    """
+    Handle TenantValidationError exceptions.
+    
+    Args:
+        request: FastAPI request object
+        exc: TenantValidationError exception
+        
+    Returns:
+        JSONResponse with 400 status
+    """
+    logger.warning(
+        f"Tenant ID validation failed: {exc.message}",
+        extra={
+            "path": request.url.path,
+            "method": request.method,
+            "detail": exc.detail
+        }
+    )
+    
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={
+            "success": False,
+            "error": {
+                "type": "tenant_validation_error",
+                "message": exc.message,
+                "detail": exc.detail,
+                "path": request.url.path
+            }
+        }
+    )
 
 
 async def param_validation_exception_handler(request: Request, exc: ParamValidationError) -> JSONResponse:

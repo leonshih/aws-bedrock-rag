@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from app.routers.chat import router as chat_router
 from app.routers.ingest import router as ingest_router
 from app.middleware.exception_handlers import register_exception_handlers
+from app.middleware.tenant_middleware import TenantMiddleware
 from app.utils.config import Config
 
 # Load configuration
@@ -48,6 +49,9 @@ logger.info(f"Starting AWS Bedrock RAG API (Log Level: {config.LOG_LEVEL})")
 
 # Register global exception handlers
 register_exception_handlers(app)
+
+# Register tenant middleware
+app.add_middleware(TenantMiddleware)
 
 # Register routers
 app.include_router(chat_router)
