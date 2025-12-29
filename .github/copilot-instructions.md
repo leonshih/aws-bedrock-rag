@@ -36,8 +36,8 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 ## Step 3: Implementation
 
 - Generate code following the **Coding Standards** (see below).
-- Create/Update co-located unit tests (test_*.py) immediately matching the implementation.
-- MANDATORY ACTION: Run the specific tests you created and verify they pass before proceeding.
+- Create/Update co-located unit tests (test\_\*.py) immediately matching the implementation.
+- MANDATORY ACTION: Run tests using `make test` command (DO NOT use raw pytest or python commands).
 - **Crucial:** Stop immediately after completing the agreed task. Do NOT proceed to the next checklist item automatically.
 
 ## Step 4: Documentation Update (Definition of Done)
