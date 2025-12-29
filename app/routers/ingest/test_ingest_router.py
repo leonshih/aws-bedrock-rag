@@ -10,6 +10,9 @@ from app.main import app
 from app.dtos.routers.ingest import FileResponse, FileListResponse, FileDeleteResponse
 from app.routers.ingest.ingest_router import get_ingestion_service
 
+# Test tenant ID for all tests
+TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440000"
+
 
 @pytest.fixture
 def mock_ingestion_service():
@@ -70,7 +73,7 @@ def client(mock_ingestion_service):
 
 def test_list_files_success(client, mock_ingestion_service):
     """Test successful file listing."""
-    response = client.get("/files")
+    response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
     data = response.json()
@@ -85,7 +88,7 @@ def test_list_files_success(client, mock_ingestion_service):
 
 def test_list_files_with_prefix(client, mock_ingestion_service):
     """Test file listing with prefix filter."""
-    response = client.get("/files?prefix=documents/2024/")
+    response = client.get("/files?prefix=documents/2024/", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
     call_args = mock_ingestion_service.list_documents.call_args
@@ -103,7 +106,7 @@ def test_list_files_empty(client, mock_ingestion_service):
         )
     }
     
-    response = client.get("/files")
+    response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
     data = response.json()
@@ -116,7 +119,7 @@ def test_list_files_error(client, mock_ingestion_service):
     """Test handling of error during listing."""
     mock_ingestion_service.list_documents.side_effect = Exception("S3 error")
     
-    response = client.get("/files")
+    response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 500
     data = response.json()
@@ -129,7 +132,7 @@ def test_upload_file_success(client, mock_ingestion_service):
     file_content = b"Test PDF content"
     files = {"file": ("test.pdf", BytesIO(file_content), "application/pdf")}
     
-    response = client.post("/files", files=files)
+    response = client.post("/files", files=files, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
     data = response.json()
@@ -147,7 +150,7 @@ def test_upload_file_with_metadata(client, mock_ingestion_service):
     metadata = '{"category": "research", "year": "2024"}'
     data = {"metadata": metadata}
     
-    response = client.post("/files", files=files, data=data)
+    response = client.post("/files", files=files, data=data, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
     call_args = mock_ingestion_service.upload_document.call_args
@@ -160,7 +163,7 @@ def test_upload_file_with_invalid_json_metadata(client, mock_ingestion_service):
     files = {"file": ("test.pdf", BytesIO(file_content), "application/pdf")}
     data = {"metadata": "not valid json{"}
     
-    response = client.post("/files", files=files, data=data)
+    response = client.post("/files", files=files, data=data, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 400
     data = response.json()
@@ -174,7 +177,7 @@ def test_upload_file_with_non_dict_metadata(client, mock_ingestion_service):
     files = {"file": ("test.pdf", BytesIO(file_content), "application/pdf")}
     data = {"metadata": '["not", "a", "dict"]'}
     
-    response = client.post("/files", files=files, data=data)
+    response = client.post("/files", files=files, data=data, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 400
     data = response.json()
@@ -189,7 +192,7 @@ def test_upload_file_service_error(client, mock_ingestion_service):
     file_content = b"Test PDF content"
     files = {"file": ("test.pdf", BytesIO(file_content), "application/pdf")}
     
-    response = client.post("/files", files=files)
+    response = client.post("/files", files=files, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 500
     data = response.json()
@@ -199,7 +202,7 @@ def test_upload_file_service_error(client, mock_ingestion_service):
 
 def test_delete_file_success(client, mock_ingestion_service):
     """Test successful file deletion."""
-    response = client.delete("/files/test-doc.pdf")
+    response = client.delete("/files/test-doc.pdf", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
     data = response.json()
@@ -214,7 +217,7 @@ def test_delete_file_not_found(client, mock_ingestion_service):
     """Test deletion of non-existent file."""
     mock_ingestion_service.delete_document.side_effect = FileNotFoundError("File not found")
     
-    response = client.delete("/files/nonexistent.pdf")
+    response = client.delete("/files/nonexistent.pdf", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 404
     data = response.json()
@@ -226,7 +229,7 @@ def test_delete_file_error(client, mock_ingestion_service):
     """Test handling of error during deletion."""
     mock_ingestion_service.delete_document.side_effect = Exception("S3 delete failed")
     
-    response = client.delete("/files/test-doc.pdf")
+    response = client.delete("/files/test-doc.pdf", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 500
     data = response.json()
@@ -239,8 +242,8 @@ def test_upload_multiple_files_sequentially(client, mock_ingestion_service):
     files1 = {"file": ("file1.pdf", BytesIO(b"Content 1"), "application/pdf")}
     files2 = {"file": ("file2.pdf", BytesIO(b"Content 2"), "application/pdf")}
     
-    response1 = client.post("/files", files=files1)
-    response2 = client.post("/files", files=files2)
+    response1 = client.post("/files", files=files1, headers={"X-Tenant-ID": TEST_TENANT_ID})
+    response2 = client.post("/files", files=files2, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response1.status_code == 200
     assert response2.status_code == 200
@@ -253,7 +256,7 @@ def test_upload_with_empty_metadata(client, mock_ingestion_service):
     files = {"file": ("test.pdf", BytesIO(file_content), "application/pdf")}
     data = {"metadata": ""}
     
-    response = client.post("/files", files=files, data=data)
+    response = client.post("/files", files=files, data=data, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     # Empty string is treated as no metadata (None)
     assert response.status_code == 200
@@ -268,7 +271,7 @@ def test_upload_with_complex_metadata(client, mock_ingestion_service):
     metadata = '{"category": "research", "tags": ["AI", "ML"], "author": {"name": "John", "email": "john@example.com"}}'
     data = {"metadata": metadata}
     
-    response = client.post("/files", files=files, data=data)
+    response = client.post("/files", files=files, data=data, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
     call_args = mock_ingestion_service.upload_document.call_args
@@ -282,7 +285,7 @@ def test_upload_with_complex_metadata(client, mock_ingestion_service):
 
 def test_delete_with_special_characters_in_filename(client, mock_ingestion_service):
     """Test deletion with special characters in filename."""
-    response = client.delete("/files/test%20doc%20(1).pdf")
+    response = client.delete("/files/test%20doc%20(1).pdf", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
     call_args = mock_ingestion_service.delete_document.call_args
@@ -292,7 +295,7 @@ def test_delete_with_special_characters_in_filename(client, mock_ingestion_servi
 
 def test_list_files_response_structure(client, mock_ingestion_service):
     """Test that list response has correct structure."""
-    response = client.get("/files")
+    response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
     data = response.json()

@@ -6,6 +6,7 @@ Handles query processing, metadata filtering, and citation parsing.
 """
 import logging
 from typing import List, Optional, Dict, Any
+from uuid import UUID
 from app.adapters.bedrock import BedrockAdapter
 from app.dtos.routers.chat import ChatRequest, ChatResponse, Citation, MetadataFilter
 from app.utils.config import Config
@@ -28,18 +29,20 @@ class RAGService:
     
     def query(
         self,
-        request: ChatRequest
+        request: ChatRequest,
+        tenant_id: UUID
     ) -> dict:
         """
         Process a RAG query using Bedrock Knowledge Base.
         
         Args:
             request: Chat request with query and optional filters
+            tenant_id: Tenant identifier (extracted from X-Tenant-ID header by middleware)
             
         Returns:
             Dict with success flag and ChatResponse data
         """
-        logger.info(f"Processing RAG query: '{request.query[:100]}...', filters={len(request.metadata_filters or [])}, max_results={request.max_results}")
+        logger.info(f"Processing RAG query for tenant {tenant_id}: '{request.query[:100]}...', filters={len(request.metadata_filters or [])}, max_results={request.max_results}")
         
         # Use model ID directly (supports both inference profiles and direct model IDs)
         # For inference profiles: us.anthropic.claude-3-5-sonnet-20241022-v2:0

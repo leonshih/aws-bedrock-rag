@@ -32,11 +32,6 @@ class Citation(BaseModel):
 class ChatRequest(BaseModel):
     """Request model for chat/query endpoint."""
     
-    tenant_id: UUID = Field(
-        ...,
-        description="Tenant identifier (UUID v4) - Required for data isolation",
-        examples=["550e8400-e29b-41d4-a716-446655440000"]
-    )
     query: str = Field(..., min_length=1, description="User's question or query text")
     metadata_filters: Optional[List[MetadataFilter]] = Field(
         default=None,
@@ -56,7 +51,6 @@ class ChatRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
                 "query": "What are the side effects of aspirin?",
                 "metadata_filters": [
                     {

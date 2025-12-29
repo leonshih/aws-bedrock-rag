@@ -8,6 +8,9 @@ from app.main import app
 from app.dtos.routers.chat import ChatResponse, Citation
 from app.routers.chat.chat_router import get_rag_service
 
+# Test tenant ID for all tests
+TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440000"
+
 
 @pytest.fixture
 def mock_rag_service():
@@ -45,7 +48,8 @@ def test_query_success(client, mock_rag_service):
     """Test successful query processing."""
     response = client.post(
         "/chat",
-        json={"query": "What is RAG?"}
+        json={"query": "What is RAG?"},
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 200
@@ -68,7 +72,8 @@ def test_query_with_filters(client, mock_rag_service):
             "metadata_filters": [
                 {"key": "category", "value": "documentation", "operator": "equals"}
             ]
-        }
+        },
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 200
@@ -84,7 +89,8 @@ def test_query_with_max_results(client, mock_rag_service):
         json={
             "query": "What is RAG?",
             "max_results": 10
-        }
+        },
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 200
@@ -99,7 +105,8 @@ def test_query_with_custom_model(client, mock_rag_service):
         json={
             "query": "What is RAG?",
             "model_id": "custom-model-id"
-        }
+        },
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 200
@@ -111,7 +118,8 @@ def test_query_empty_string(client):
     """Test query with empty string."""
     response = client.post(
         "/chat",
-        json={"query": ""}
+        json={"query": ""},
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 422  # Pydantic validation error
@@ -121,7 +129,8 @@ def test_query_missing_query_field(client):
     """Test request without query field."""
     response = client.post(
         "/chat",
-        json={}
+        json={},
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 422  # Pydantic validation error
@@ -134,7 +143,8 @@ def test_query_invalid_max_results(client):
         json={
             "query": "What is RAG?",
             "max_results": 0  # Below minimum
-        }
+        },
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 422  # Pydantic validation error
@@ -146,7 +156,8 @@ def test_query_value_error(client, mock_rag_service):
     
     response = client.post(
         "/chat",
-        json={"query": "What is RAG?"}
+        json={"query": "What is RAG?"},
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 400
@@ -161,7 +172,8 @@ def test_query_generic_exception(client, mock_rag_service):
     
     response = client.post(
         "/chat",
-        json={"query": "What is RAG?"}
+        json={"query": "What is RAG?"},
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 500
@@ -182,7 +194,8 @@ def test_query_with_all_parameters(client, mock_rag_service):
             ],
             "max_results": 15,
             "model_id": "custom-model"
-        }
+        },
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 200
@@ -197,7 +210,8 @@ def test_response_structure(client, mock_rag_service):
     """Test that response matches expected structure."""
     response = client.post(
         "/chat",
-        json={"query": "What is RAG?"}
+        json={"query": "What is RAG?"},
+        headers={"X-Tenant-ID": TEST_TENANT_ID}
     )
     
     assert response.status_code == 200

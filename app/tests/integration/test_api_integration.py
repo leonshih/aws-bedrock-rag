@@ -8,6 +8,9 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.utils.config import Config
 
+# Test tenant ID for multi-tenant testing
+TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440000"
+
 
 @pytest.fixture
 def client():
@@ -28,7 +31,8 @@ class TestChatRouterIntegration:
         """Test chat endpoint is registered and accessible."""
         response = client.post(
             "/chat",
-            json={"query": "test"}
+            json={"query": "test"},
+            headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
@@ -40,21 +44,26 @@ class TestChatRouterIntegration:
             json={
                 "query": "What is AWS Bedrock?",
                 "max_results": 5
-            }
+            },
+            headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         # Should return 200 (mock mode) or valid response
         assert response.status_code in [200, 500]  # 500 if AWS not configured
         
         if response.status_code == 200:
             data = response.json()
-            assert "answer" in data
-            assert "citations" in data
+            assert "success" in data
+            assert data["success"] is True
+            assert "data" in data
+            assert "answer" in data["data"]
+            assert "citations" in data["data"]
 
     def test_chat_endpoint_validation_error(self, client):
         """Test chat endpoint returns 422 for invalid request."""
         response = client.post(
             "/chat",
-            json={"query": ""}  # Empty query should fail validation
+            json={"query": ""},  # Empty query should fail validation
+            headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         assert response.status_code == 422
         assert "error" in response.json()
@@ -68,7 +77,8 @@ class TestChatRouterIntegration:
                 "metadata_filter": {
                     "equals": {"category": "documentation"}
                 }
-            }
+            },
+            headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         # Should not fail validation
         assert response.status_code != 422
@@ -78,7 +88,8 @@ class TestChatRouterIntegration:
         # This test ensures the dependency injection works
         response = client.post(
             "/chat",
-            json={"query": "test"}
+            json={"query": "test"},
+            headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         
         # If service initialization failed, we'd get 500 with specific error
@@ -92,13 +103,13 @@ class TestIngestRouterIntegration:
 
     def test_list_files_endpoint_exists(self, client):
         """Test list files endpoint is registered and accessible."""
-        response = client.get("/files")
+        response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
 
     def test_list_files_with_real_service(self, client, config):
         """Test list files endpoint with real service initialization."""
-        response = client.get("/files")
+        response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
         
         # In mock mode, should return empty list or mocked data
         if config.MOCK_MODE:
@@ -113,7 +124,8 @@ class TestIngestRouterIntegration:
         # Minimal request to check endpoint exists
         response = client.post(
             "/files",
-            files={"file": ("test.txt", b"test content", "text/plain")}
+            files={"file": ("test.txt", b"test content", "text/plain")},
+            headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
@@ -121,7 +133,7 @@ class TestIngestRouterIntegration:
     def test_upload_file_validation_error(self, client):
         """Test upload endpoint returns 422 for invalid request."""
         # Missing required file parameter
-        response = client.post("/files", data={})
+        response = client.post("/files", data={}, headers={"X-Tenant-ID": TEST_TENANT_ID})
         assert response.status_code == 422
 
     def test_upload_file_with_metadata(self, client):
@@ -129,20 +141,21 @@ class TestIngestRouterIntegration:
         response = client.post(
             "/files",
             files={"file": ("test.txt", b"test content", "text/plain")},
-            data={"metadata": '{"category": "test"}'}
+            data={"metadata": '{"category": "test"}'},
+            headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         # Should not fail validation
         assert response.status_code != 422
 
     def test_delete_file_endpoint_exists(self, client):
         """Test delete file endpoint is registered and accessible."""
-        response = client.delete("/files/test.txt")
+        response = client.delete("/files/test.txt", headers={"X-Tenant-ID": TEST_TENANT_ID})
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
 
     def test_delete_file_with_real_service(self, client, config):
         """Test delete endpoint with real service initialization."""
-        response = client.delete("/files/nonexistent.txt")
+        response = client.delete("/files/nonexistent.txt", headers={"X-Tenant-ID": TEST_TENANT_ID})
         
         # In mock mode or real mode, should handle gracefully
         # Either 200 (success), 404 (not found), or 500 (error)
@@ -156,7 +169,8 @@ class TestAPIExceptionHandling:
         """Test validation errors return proper format."""
         response = client.post(
             "/chat",
-            json={"query": ""}  # Invalid: empty query
+            json={"query": ""},  # Invalid: empty query
+            headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         
         assert response.status_code == 422
@@ -172,7 +186,7 @@ class TestAPIExceptionHandling:
         response = client.post(
             "/chat",
             data="invalid json",
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json", "X-Tenant-ID": TEST_TENANT_ID}
         )
         
         data = response.json()
@@ -182,7 +196,7 @@ class TestAPIExceptionHandling:
 
     def test_404_error_format(self, client):
         """Test 404 errors return proper format."""
-        response = client.get("/nonexistent-endpoint")
+        response = client.get("/nonexistent-endpoint", headers={"X-Tenant-ID": TEST_TENANT_ID})
         
         assert response.status_code == 404
         data = response.json()
@@ -197,7 +211,8 @@ class TestAPIDependencyInjection:
         # This would fail if dependency injection is broken
         response = client.post(
             "/chat",
-            json={"query": "test"}
+            json={"query": "test"},
+            headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         
         # Should not get TypeError about missing parameters
@@ -209,7 +224,7 @@ class TestAPIDependencyInjection:
     def test_ingest_router_dependency_injection(self, client, config):
         """Test ingest router properly injects Ingestion service."""
         # This would fail if dependency injection is broken
-        response = client.get("/files")
+        response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
         
         # Should not get TypeError about missing parameters
         if config.MOCK_MODE:
@@ -218,8 +233,8 @@ class TestAPIDependencyInjection:
 
     def test_multiple_requests_use_different_service_instances(self, client):
         """Test each request gets fresh service instance."""
-        response1 = client.post("/chat", json={"query": "test1"})
-        response2 = client.post("/chat", json={"query": "test2"})
+        response1 = client.post("/chat", json={"query": "test1"}, headers={"X-Tenant-ID": TEST_TENANT_ID})
+        response2 = client.post("/chat", json={"query": "test2"}, headers={"X-Tenant-ID": TEST_TENANT_ID})
         
         # Both should work independently
         assert response1.status_code in [200, 500]

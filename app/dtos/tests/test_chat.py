@@ -78,8 +78,7 @@ class TestChatRequest:
     
     def test_valid_chat_request(self):
         """Test creating a valid chat request."""
-        request = ChatRequest(tenant_id=TEST_TENANT_ID, query="What is aspirin?")
-        assert request.tenant_id == UUID(TEST_TENANT_ID)
+        request = ChatRequest(query="What is aspirin?")
         assert request.query == "What is aspirin?"
         assert request.metadata_filters is None
         assert request.max_results == 5
@@ -87,30 +86,26 @@ class TestChatRequest:
     def test_chat_request_with_filters(self):
         """Test chat request with metadata filters."""
         request = ChatRequest(
-            tenant_id=TEST_TENANT_ID,
             query="Show recent studies",
             metadata_filters=[
                 MetadataFilter(key="year", value=2020, operator="greater_than")
             ]
         )
-        assert request.tenant_id == UUID(TEST_TENANT_ID)
         assert len(request.metadata_filters) == 1
         assert request.metadata_filters[0].key == "year"
     
     def test_chat_request_with_custom_model(self):
         """Test chat request with custom model override."""
         request = ChatRequest(
-            tenant_id=TEST_TENANT_ID,
             query="Test query",
             model_id="anthropic.claude-3-haiku-20240307-v1:0"
         )
-        assert request.tenant_id == UUID(TEST_TENANT_ID)
         assert request.model_id == "anthropic.claude-3-haiku-20240307-v1:0"
     
     def test_empty_query_validation(self):
         """Test validation error for empty query."""
         with pytest.raises(ValidationError):
-            ChatRequest(tenant_id=TEST_TENANT_ID, query="")
+            ChatRequest(query="")
     
     def test_missing_query_validation(self):
         """Test validation error for missing query."""
@@ -120,16 +115,16 @@ class TestChatRequest:
     def test_max_results_bounds(self):
         """Test max_results validation bounds."""
         # Valid range
-        request = ChatRequest(tenant_id=TEST_TENANT_ID, query="test", max_results=50)
+        request = ChatRequest(query="test", max_results=50)
         assert request.max_results == 50
         
         # Below minimum
         with pytest.raises(ValidationError):
-            ChatRequest(tenant_id=TEST_TENANT_ID, query="test", max_results=0)
+            ChatRequest(query="test", max_results=0)
         
         # Above maximum
         with pytest.raises(ValidationError):
-            ChatRequest(tenant_id=TEST_TENANT_ID, query="test", max_results=101)
+            ChatRequest(query="test", max_results=101)
 
 
 class TestChatResponse:

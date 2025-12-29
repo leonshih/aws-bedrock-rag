@@ -9,6 +9,9 @@ from app.services.rag import RAGService
 from app.dtos.routers.chat import ChatRequest, ChatResponse, MetadataFilter
 from app.utils.config import Config
 
+# Test tenant ID for multi-tenant testing
+TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440000"
+
 
 class TestRAGService:
     """Tests for RAGService."""
@@ -60,7 +63,7 @@ class TestRAGService:
         # Create service and make request
         service = RAGService(config=mock_config)
         request = ChatRequest(query="What is aspirin?")
-        response = service.query(request)
+        response = service.query(request, tenant_id=TEST_TENANT_ID)
         
         # Verify response structure
         assert isinstance(response, dict)
@@ -100,7 +103,7 @@ class TestRAGService:
             query="Test query",
             model_id="anthropic.claude-3-haiku-20240307-v1:0"
         )
-        response = service.query(request)
+        response = service.query(request, tenant_id=TEST_TENANT_ID)
         
         assert response["success"] is True
         assert response["data"].model_used == "anthropic.claude-3-haiku-20240307-v1:0"
@@ -236,7 +239,7 @@ class TestRAGService:
                 MetadataFilter(key="year", value=2020, operator="greater_than")
             ]
         )
-        response = service.query(request)
+        response = service.query(request, tenant_id=TEST_TENANT_ID)
         
         assert response["success"] is True
         assert response["data"].answer == "Filtered answer."
