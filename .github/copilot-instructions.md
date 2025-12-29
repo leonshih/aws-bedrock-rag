@@ -22,6 +22,12 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 
 ## Step 1: Atomic Selection
 
+- **FIRST ACTION:** Check if there are uncommitted changes from the previous task:
+  ```bash
+  git status
+  ```
+  - If uncommitted changes exist → **STOP and commit them first** using Step 5
+  - If working tree is clean → Proceed to task selection
 - Read `@PROJECT_STATUS.md`.
 - **Constraint:** Select **ONLY the single next uncompleted checklist item (`[ ]`)** from the current phase.
 - Briefly state: _"I will focus solely on the task: [Task Name]"_.
@@ -50,9 +56,14 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 
 ## Step 5: Finalization (Commit)
 
-- Once the user approves the code and docs, generate a Git commit command.
+- **MANDATORY:** After user approves the code and docs, you MUST execute the Git commit immediately.
+- **DO NOT skip this step** - always commit before moving to the next task.
 - **Format:** `feat/fix/docs/refactor: <clear description>`
-- **Example:** `git commit -am "feat: implement tenant id validation middleware"`
+- **Example:** 
+  ```bash
+  git add -A && git commit -m "feat: implement tenant id validation middleware"
+  ```
+- **Important:** Use `git add -A` to ensure all changes (including new files) are staged.
 
 ---
 
@@ -74,6 +85,26 @@ _Refer to `@docs/TECH_RULES.md` for full details, but strictly enforce these:_
 5.  **Dependency Injection:**
     - Always use `Depends()` for services in routers.
     - Never instantiate Services/Adapters manually inside business logic.
+6.  **Multi-Tenant Architecture (CRITICAL):**
+    - **tenant_id is NEVER part of request DTOs** (e.g., ChatRequest, FileUploadRequest)
+    - **Flow:** `X-Tenant-ID` header → TenantMiddleware → `request.state.tenant_context`
+    - **Router Layer:** Extract tenant_id using `get_tenant_context(request)`, pass as **independent parameter** to Service
+    - **Service Layer:** Accept `tenant_id: UUID` as separate parameter (NOT in DTO)
+    - **Example Pattern:**
+      ```python
+      # ✅ CORRECT - Router
+      async def endpoint(request: Request, dto: ChatRequest):
+          tenant_context = get_tenant_context(request)
+          service.method(dto, tenant_id=tenant_context.tenant_id)
+      
+      # ✅ CORRECT - Service
+      def method(self, dto: ChatRequest, tenant_id: UUID):
+          logger.info(f"Processing for tenant {tenant_id}")
+      
+      # ❌ WRONG - Do NOT include tenant_id in DTO
+      class ChatRequest(BaseModel):
+          tenant_id: UUID  # NEVER DO THIS
+      ```
 
 ---
 
