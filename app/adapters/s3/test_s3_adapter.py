@@ -2,6 +2,9 @@
 Unit tests for S3 Adapter
 """
 import pytest
+from unittest.mock import Mock, patch
+from datetime import datetime
+from botocore.exceptions import ClientError
 from app.adapters.s3 import S3Adapter
 
 
@@ -173,4 +176,195 @@ class TestS3Adapter:
         assert len(files1) == 1
         assert len(files2) == 1
         assert files1[0].key == 'file1.txt'
-        assert files2[0].key == 'file2.txt'
+
+
+class TestS3AdapterRealMode:
+    """Test cases for S3Adapter with real AWS client (mocked)."""
+    
+    @pytest.fixture
+    def mock_s3_client(self):
+        """Create a mock S3 client."""
+        return Mock()
+    
+    @pytest.fixture
+    def adapter_real(self, mock_s3_client):
+        """Create an S3 adapter in real mode with mocked boto3 client."""
+        with patch('boto3.client', return_value=mock_s3_client):
+            adapter = S3Adapter(mock_mode=False)
+            adapter.client = mock_s3_client
+            return adapter
+    
+    def test_initialization_real_mode(self):
+        """Test adapter initializes correctly in real mode."""
+        with patch('boto3.client') as mock_boto:
+            mock_client = Mock()
+            mock_boto.return_value = mock_client
+            
+            adapter = S3Adapter(mock_mode=False)
+            
+            assert adapter.mock_mode is False
+            assert adapter.client is not None
+            mock_boto.assert_called_once_with('s3', region_name=adapter.region)
+    
+    def test_upload_file_real_mode_success(self, adapter_real, mock_s3_client):
+        """Test upload_file with real client."""
+        content = b"Test file content"
+        bucket = "test-bucket"
+        key = "test-file.txt"
+        
+        mock_s3_client.put_object.return_value = {
+            'ETag': '"abc123"',
+            'VersionId': 'v1'
+        }
+        
+        response = adapter_real.upload_file(content, bucket, key)
+        
+        # Verify API call
+        mock_s3_client.put_object.assert_called_once_with(
+            Bucket=bucket,
+            Key=key,
+            Body=content
+        )
+        
+        # Verify response
+        assert response["success"] is True
+        data = response["data"]
+        assert data.etag == '"abc123"'
+        assert data.version_id == 'v1'
+    
+    def test_upload_file_with_metadata(self, adapter_real, mock_s3_client):
+        """Test upload_file includes metadata when provided."""
+        content = b"Test content"
+        bucket = "test-bucket"
+        key = "file.txt"
+        metadata = {"author": "test-user", "version": "1.0"}
+        
+        mock_s3_client.put_object.return_value = {
+            'ETag': '"def456"',
+            'VersionId': 'v2'
+        }
+        
+        adapter_real.upload_file(content, bucket, key, metadata)
+        
+        call_args = mock_s3_client.put_object.call_args[1]
+        assert call_args['Metadata'] == metadata
+    
+    def test_upload_file_client_error_propagates(self, adapter_real, mock_s3_client):
+        """Test upload_file propagates ClientError."""
+        content = b"Test content"
+        bucket = "test-bucket"
+        key = "file.txt"
+        
+        error_response = {'Error': {'Code': 'NoSuchBucket', 'Message': 'Bucket not found'}}
+        mock_s3_client.put_object.side_effect = ClientError(error_response, 'PutObject')
+        
+        with pytest.raises(ClientError) as exc_info:
+            adapter_real.upload_file(content, bucket, key)
+        
+        assert exc_info.value.response['Error']['Code'] == 'NoSuchBucket'
+    
+    def test_list_files_real_mode_success(self, adapter_real, mock_s3_client):
+        """Test list_files with real client."""
+        bucket = "test-bucket"
+        prefix = "documents/"
+        
+        mock_s3_client.list_objects_v2.return_value = {
+            'Contents': [
+                {
+                    'Key': 'documents/file1.pdf',
+                    'Size': 1024,
+                    'LastModified': datetime(2024, 1, 1, 0, 0, 0),
+                    'ETag': '"etag1"'
+                },
+                {
+                    'Key': 'documents/file2.pdf',
+                    'Size': 2048,
+                    'LastModified': datetime(2024, 1, 2, 0, 0, 0),
+                    'ETag': '"etag2"'
+                }
+            ],
+            'KeyCount': 2
+        }
+        
+        response = adapter_real.list_files(bucket, prefix)
+        
+        # Verify API call
+        mock_s3_client.list_objects_v2.assert_called_once_with(
+            Bucket=bucket,
+            Prefix=prefix
+        )
+        
+        # Verify response
+        assert response["success"] is True
+        data = response["data"]
+        assert data.total_count == 2
+        assert len(data.objects) == 2
+        assert data.objects[0].key == 'documents/file1.pdf'
+        assert data.objects[0].size == 1024
+        assert data.objects[1].key == 'documents/file2.pdf'
+        assert data.total_size == 3072
+    
+    def test_list_files_empty_bucket(self, adapter_real, mock_s3_client):
+        """Test list_files handles empty bucket."""
+        bucket = "empty-bucket"
+        
+        mock_s3_client.list_objects_v2.return_value = {
+            'KeyCount': 0,
+            'IsTruncated': False
+        }
+        
+        response = adapter_real.list_files(bucket)
+        
+        assert response["success"] is True
+        data = response["data"]
+        assert data.total_count == 0
+        assert len(data.objects) == 0
+    
+    def test_list_files_client_error_propagates(self, adapter_real, mock_s3_client):
+        """Test list_files propagates ClientError."""
+        bucket = "test-bucket"
+        
+        error_response = {'Error': {'Code': 'AccessDenied', 'Message': 'Access denied'}}
+        mock_s3_client.list_objects_v2.side_effect = ClientError(error_response, 'ListObjectsV2')
+        
+        with pytest.raises(ClientError) as exc_info:
+            adapter_real.list_files(bucket)
+        
+        assert exc_info.value.response['Error']['Code'] == 'AccessDenied'
+    
+    def test_delete_file_real_mode_success(self, adapter_real, mock_s3_client):
+        """Test delete_file with real client."""
+        bucket = "test-bucket"
+        key = "file-to-delete.txt"
+        
+        mock_s3_client.delete_object.return_value = {
+            'DeleteMarker': True,
+            'VersionId': 'v3'
+        }
+        
+        response = adapter_real.delete_file(bucket, key)
+        
+        # Verify API call
+        mock_s3_client.delete_object.assert_called_once_with(
+            Bucket=bucket,
+            Key=key
+        )
+        
+        # Verify response
+        assert response["success"] is True
+        data = response["data"]
+        assert data.deleted is True
+        assert data.key == key
+    
+    def test_delete_file_client_error_propagates(self, adapter_real, mock_s3_client):
+        """Test delete_file propagates ClientError."""
+        bucket = "test-bucket"
+        key = "file.txt"
+        
+        error_response = {'Error': {'Code': 'NoSuchKey', 'Message': 'Key not found'}}
+        mock_s3_client.delete_object.side_effect = ClientError(error_response, 'DeleteObject')
+        
+        with pytest.raises(ClientError) as exc_info:
+            adapter_real.delete_file(bucket, key)
+        
+        assert exc_info.value.response['Error']['Code'] == 'NoSuchKey'

@@ -173,3 +173,64 @@ def test_validation_error_format(client):
         assert "field" in detail
         assert "message" in detail
         assert "type" in detail
+
+
+def test_tenant_missing_handler(client):
+    """Test TenantMissingError exception handler."""
+    from app.dtos.common import TenantMissingError
+    
+    # Add a test route that raises TenantMissingError
+    @client.app.get("/test/tenant-missing")
+    async def raise_tenant_missing():
+        raise TenantMissingError(message="X-Tenant-ID header is required")
+    
+    response = client.get("/test/tenant-missing")
+    
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert data["error"]["type"] == "tenant_missing_error"
+    assert data["error"]["message"] == "X-Tenant-ID header is required"
+    assert "path" in data["error"]
+
+
+def test_tenant_validation_handler(client):
+    """Test TenantValidationError exception handler."""
+    from app.dtos.common import TenantValidationError
+    
+    # Add a test route that raises TenantValidationError
+    @client.app.get("/test/tenant-validation")
+    async def raise_tenant_validation():
+        raise TenantValidationError(
+            message="Invalid tenant ID format",
+            detail="Tenant ID must be a valid UUID"
+        )
+    
+    response = client.get("/test/tenant-validation")
+    
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert data["error"]["type"] == "tenant_validation_error"
+    assert data["error"]["message"] == "Invalid tenant ID format"
+    assert data["error"]["detail"] == "Tenant ID must be a valid UUID"
+    assert "path" in data["error"]
+
+
+def test_param_validation_handler(client):
+    """Test ParamValidationError exception handler."""
+    from botocore.exceptions import ParamValidationError
+    
+    # Add a test route that raises ParamValidationError
+    @client.app.get("/test/param-validation")
+    async def raise_param_validation():
+        raise ParamValidationError(report="Parameter validation failed: Invalid bucket name")
+    
+    response = client.get("/test/param-validation")
+    
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert data["error"]["type"] == "param_validation_error"
+    assert "Invalid parameters provided to AWS service" in data["error"]["message"]
+    assert "path" in data["error"]
