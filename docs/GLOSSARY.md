@@ -231,12 +231,6 @@ Custom attributes attached to documents. Stored in `.metadata.json` sidecar file
 }
 ```
 
-### Mock Mode
-
-A development mode that uses in-memory simulations instead of real AWS calls. Enabled via `MOCK_MODE=true` in `.env`.
-
-**Purpose:** Local development without AWS credentials
-
 ---
 
 ## O
@@ -438,7 +432,6 @@ __init__.py              # Package exports
 | `S3_BUCKET_NAME`         | `str`  | S3 bucket for document storage               |
 | `APP_ENV`                | `str`  | Application environment (dev/prod)           |
 | `LOG_LEVEL`              | `str`  | Logging verbosity (DEBUG/INFO/WARNING/ERROR) |
-| `MOCK_MODE`              | `bool` | Enable mock adapters for local dev           |
 
 ---
 

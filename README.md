@@ -114,7 +114,7 @@ from app.dtos.common import SuccessResponse, ErrorResponse
 
    ```bash
    cp .env.example .env
-   # Edit .env with your configuration (use MOCK_MODE=true for local development)
+   # Edit .env with your AWS credentials and configuration
    ```
 
 3. **Install dependencies**

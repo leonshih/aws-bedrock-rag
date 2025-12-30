@@ -334,24 +334,6 @@ class Config:
     # Application Configuration
     APP_ENV: str = "dev"
     LOG_LEVEL: str = "INFO"
-    MOCK_MODE: bool = False  # Enable for local development
-```
-
-### Mock Mode
-
-**Purpose:** Enable local development without AWS credentials
-
-**Behavior:**
-
-- [`BedrockAdapter`](app/adapters/bedrock/bedrock_adapter.py) returns synthetic responses
-- [`S3Adapter`](app/adapters/s3/s3_adapter.py) uses in-memory storage
-- All service logic remains unchanged
-
-**Usage:**
-
-```bash
-# .env
-MOCK_MODE=true
 ```
 
 ---

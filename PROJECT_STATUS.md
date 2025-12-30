@@ -106,7 +106,7 @@
 ## 🔧 Current Configuration
 
 **Environment:** Development  
-**Mock Mode:** Enabled (for local development without AWS credentials)  
+**Testing Strategy:** Unit tests use `@patch` to mock boto3 clients  
 **AWS Region:** us-east-1  
 **Model:** Claude 3.5 Sonnet v2 (`anthropic.claude-3-5-sonnet-20241022-v2:0`)
 
@@ -146,6 +146,16 @@
 
 **2025-12-30**:
 
+- ✅ **Completed Refactoring**: Removed Mock Mode anti-pattern from entire codebase
+  - Removed ~110 lines of built-in mock code from production adapters
+  - Migrated to standard Python testing patterns (`@patch('boto3.client')`)
+  - Updated 15 files across adapters, tests, config, and documentation
+  - **Test Results**: 224 tests passing (100% success rate)
+  - **Files Modified**:
+    - Adapters: `s3_adapter.py`, `bedrock_adapter.py` (removed `mock_mode` parameter and `_mock_*` methods)
+    - Tests: All adapter and service tests migrated to `@patch` pattern
+    - Config: Removed `MOCK_MODE` from `config.py` and `.env.example`
+    - Docs: Updated `TECH_RULES.md` (added Section 10), `ARCHITECTURE.md`, `GLOSSARY.md`, `README.md`
 - ✅ Completed "S3 path isolation" for multi-tenant data separation
 - Updated IngestionService to include tenant_id in S3 paths (`documents/{tenant_id}/`)
 - Updated IngestRouter to extract and pass tenant_id from middleware
