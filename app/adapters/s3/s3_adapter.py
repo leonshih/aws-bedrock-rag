@@ -3,7 +3,7 @@ S3 Adapter
 
 Low-level adapter for Amazon S3 file operations.
 """
-from typing import Optional
+from typing import Dict, Optional
 import boto3
 from botocore.exceptions import ClientError
 

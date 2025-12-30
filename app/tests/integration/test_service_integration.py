@@ -118,9 +118,8 @@ class TestServiceDependencyInjection:
         from app.adapters.bedrock.bedrock_adapter import BedrockAdapter
         from app.adapters.s3.s3_adapter import S3Adapter
         
-        config = Config()
-        bedrock = BedrockAdapter(config)
-        s3 = S3Adapter(config)
+        bedrock = BedrockAdapter()
+        s3 = S3Adapter()
         
         # These should fail - services should not accept adapters directly
         with pytest.raises(TypeError):
@@ -137,4 +136,4 @@ class TestServiceDependencyInjection:
         # Same environment variables should produce same values
         assert config1.BEDROCK_KB_ID == config2.BEDROCK_KB_ID
         assert config1.S3_BUCKET_NAME == config2.S3_BUCKET_NAME
-        assert config1.MOCK_MODE == config2.MOCK_MODE
+        assert config1.AWS_REGION == config2.AWS_REGION

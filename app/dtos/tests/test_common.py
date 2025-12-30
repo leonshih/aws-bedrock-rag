@@ -12,6 +12,8 @@ from app.dtos.common import (
     SuccessResponse,
     ErrorResponse,
     ErrorDetail,
+    create_success_response,
+    create_error_response,
 )
 
 
@@ -256,3 +258,50 @@ class TestErrorDetail:
         assert "properties" in schema
         assert "type" in schema["properties"]
         assert "message" in schema["properties"]
+
+
+class TestHelperFunctions:
+    """Test suite for helper functions."""
+    
+    def test_create_error_response_basic(self):
+        """Test create_error_response with basic parameters."""
+        response = create_error_response(
+            error_type="validation_error",
+            message="Invalid input"
+        )
+        
+        assert response["success"] is False
+        assert response["error"]["type"] == "validation_error"
+        assert response["error"]["message"] == "Invalid input"
+        assert response["error"]["detail"] is None
+    
+    def test_create_error_response_with_detail(self):
+        """Test create_error_response with detail parameter."""
+        response = create_error_response(
+            error_type="tenant_error",
+            message="Tenant not found",
+            detail="Tenant ID does not exist in database"
+        )
+        
+        assert response["success"] is False
+        assert response["error"]["type"] == "tenant_error"
+        assert response["error"]["message"] == "Tenant not found"
+        assert response["error"]["detail"] == "Tenant ID does not exist in database"
+    
+    def test_create_error_response_structure(self):
+        """Test create_error_response returns correct structure."""
+        response = create_error_response(
+            error_type="test_error",
+            message="Test message"
+        )
+        
+        # Verify top-level structure
+        assert "success" in response
+        assert "error" in response
+        assert len(response) == 2
+        
+        # Verify error object structure
+        assert "type" in response["error"]
+        assert "message" in response["error"]
+        assert "detail" in response["error"]
+        assert len(response["error"]) == 3

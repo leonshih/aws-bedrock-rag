@@ -355,10 +355,10 @@ def test_s3_upload(mock_boto3_client):
     mock_s3 = Mock()
     mock_boto3_client.return_value = mock_s3
     mock_s3.put_object.return_value = {'ETag': '"abc123"'}
-    
+
     adapter = S3Adapter()
     result = adapter.upload_file(b"content", "bucket", "key")
-    
+
     mock_s3.put_object.assert_called_once()
     assert result["success"] is True
 
@@ -371,10 +371,10 @@ def test_query_basic(mock_bedrock_class):
         "data": BedrockRAGResult(...)
     }
     mock_bedrock_class.return_value = mock_adapter
-    
+
     service = RAGService()
     result = service.query(request, tenant_id=UUID("..."))
-    
+
     mock_adapter.retrieve_and_generate.assert_called_once()
 
 # Router Layer: Mock services
@@ -400,7 +400,7 @@ class S3Adapter:
         self.mock_mode = mock_mode
         if self.mock_mode:
             self._mock_storage = {}
-    
+
     def upload_file(self, ...):
         if self.mock_mode:  # WRONG
             return self._mock_upload(...)
@@ -421,11 +421,11 @@ class S3Adapter:
 # app/adapters/s3/s3_adapter.py (Production Code)
 class S3Adapter:
     """Pure adapter with only real AWS implementation."""
-    
+
     def __init__(self):
         config = get_config()
         self.client = boto3.client('s3', region_name=config.AWS_REGION)
-    
+
     def upload_file(
         self,
         file_content: bytes,
@@ -438,14 +438,14 @@ class S3Adapter:
             extra_args = {}
             if metadata:
                 extra_args['Metadata'] = metadata
-            
+
             response = self.client.put_object(
                 Bucket=bucket,
                 Key=key,
                 Body=file_content,
                 **extra_args
             )
-            
+
             result = S3UploadResult(
                 etag=response.get('ETag', ''),
                 version_id=response.get('VersionId')
@@ -457,7 +457,7 @@ class S3Adapter:
 # app/adapters/s3/test_s3_adapter.py (Test Code)
 class TestS3Adapter:
     """Tests mock boto3, not S3Adapter itself."""
-    
+
     @patch('boto3.client')
     def test_upload_file_success(self, mock_boto3_client):
         # Setup mock
@@ -467,11 +467,11 @@ class TestS3Adapter:
             'ETag': '"mock-etag"',
             'VersionId': 'v1'
         }
-        
+
         # Test real code path with mocked dependency
         adapter = S3Adapter()
         result = adapter.upload_file(b"test", "bucket", "key")
-        
+
         # Verify
         assert result["success"] is True
         assert result["data"].etag == '"mock-etag"'
@@ -484,11 +484,11 @@ class TestS3Adapter:
 
 #### Mock Patterns by Layer
 
-| Layer | What to Mock | How to Mock |
-|-------|-------------|-------------|
-| **Adapter** | `boto3` clients | `@patch('boto3.client')` |
-| **Service** | Adapter instances | `@patch('app.services.*.*.AdapterClass')` |
-| **Router** | Service instances | `@pytest.fixture` with `Mock(spec=ServiceClass)` |
+| Layer       | What to Mock      | How to Mock                                      |
+| ----------- | ----------------- | ------------------------------------------------ |
+| **Adapter** | `boto3` clients   | `@patch('boto3.client')`                         |
+| **Service** | Adapter instances | `@patch('app.services.*.*.AdapterClass')`        |
+| **Router**  | Service instances | `@pytest.fixture` with `Mock(spec=ServiceClass)` |
 
 #### Additional Testing Guidelines
 

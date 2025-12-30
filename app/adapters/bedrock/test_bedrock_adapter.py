@@ -2,169 +2,57 @@
 Unit tests for Bedrock Adapter
 """
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from botocore.exceptions import ClientError
 from app.adapters.bedrock import BedrockAdapter
 
 
 class TestBedrockAdapter:
-    """Test cases for BedrockAdapter in mock mode."""
+    """Test cases for BedrockAdapter with mocked boto3 client."""
     
     @pytest.fixture
-    def adapter(self):
-        """Create a mock Bedrock adapter instance."""
-        return BedrockAdapter(mock_mode=True)
-    
-    def test_initialization_mock_mode(self, adapter):
-        """Test adapter initializes correctly in mock mode."""
-        assert adapter.mock_mode is True
-        assert adapter.client is None
-        assert adapter.region is not None
-        assert adapter.model_id is not None
-    
-    def test_retrieve_and_generate_returns_response(self, adapter):
-        """Test retrieve_and_generate returns proper response structure."""
-        query = "What is AWS Bedrock?"
-        kb_id = "test-kb-id"
-        
-        response = adapter.retrieve_and_generate(query, kb_id)
-        
-        # Verify wrapper structure
-        assert response["success"] is True
-        assert "data" in response
-        
-        # Verify data structure
-        data = response["data"]
-        assert hasattr(data, "answer")
-        assert hasattr(data, "session_id")
-        assert hasattr(data, "references")
-        
-        # Verify content
-        assert query in data.answer
-        assert data.session_id == "mock-session-id"
-        assert len(data.references) > 0
-    
-    def test_retrieve_and_generate_with_custom_model(self, adapter):
-        """Test retrieve_and_generate accepts custom model ARN."""
-        query = "Test query"
-        kb_id = "test-kb-id"
-        model_arn = "arn:aws:bedrock:us-east-1::foundation-model/custom-model"
-        
-        response = adapter.retrieve_and_generate(query, kb_id, model_arn)
-        
-        # In mock mode, should still return valid response
-        assert response is not None
-        assert response["success"] is True
-        assert "data" in response
-    
-    def test_retrieve_and_generate_citations_structure(self, adapter):
-        """Test citations have proper structure."""
-        query = "Test query"
-        kb_id = "test-kb-id"
-        
-        response = adapter.retrieve_and_generate(query, kb_id)
-        
-        data = response["data"]
-        references = data.references
-        assert len(references) > 0
-        
-        first_ref = references[0]
-        assert hasattr(first_ref, "content")
-        assert hasattr(first_ref, "s3_uri")
-        assert hasattr(first_ref, "score")
-        assert first_ref.content is not None
-        assert first_ref.s3_uri is not None
-    
-    def test_start_ingestion_job_returns_response(self, adapter):
-        """Test start_ingestion_job returns proper response structure."""
-        kb_id = "test-kb-id"
-        data_source_id = "test-ds-id"
-        
-        response = adapter.start_ingestion_job(kb_id, data_source_id)
-        
-        # Verify wrapper structure
-        assert response["success"] is True
-        assert "data" in response
-        
-        # Verify data structure
-        data = response["data"]
-        assert hasattr(data, "job_id")
-        assert hasattr(data, "status")
-        assert hasattr(data, "knowledge_base_id")
-        assert hasattr(data, "data_source_id")
-        assert data.knowledge_base_id == kb_id
-        assert data.data_source_id == data_source_id
-    
-    def test_start_ingestion_job_status(self, adapter):
-        """Test ingestion job returns valid status."""
-        kb_id = "test-kb-id"
-        data_source_id = "test-ds-id"
-        
-        response = adapter.start_ingestion_job(kb_id, data_source_id)
-        
-        status = response["data"].status
-        valid_statuses = ['STARTING', 'IN_PROGRESS', 'COMPLETE', 'FAILED']
-        assert status in valid_statuses
-    
-    def test_multiple_queries_independent(self, adapter):
-        """Test multiple queries return independent responses."""
-        query1 = "First query"
-        query2 = "Second query"
-        kb_id = "test-kb-id"
-        
-        response1 = adapter.retrieve_and_generate(query1, kb_id)
-        response2 = adapter.retrieve_and_generate(query2, kb_id)
-        
-        # Responses should be different
-        data1 = response1["data"]
-        data2 = response2["data"]
-        assert data1.session_id == data2.session_id  # Mock uses same session
-        assert query1 in data1.answer
-        assert query2 in data2.answer
-
-
-class TestBedrockAdapterRealMode:
-    """Test cases for BedrockAdapter with real AWS client (mocked)."""
-    
-    @pytest.fixture
-    def mock_bedrock_client(self):
-        """Create a mock Bedrock client."""
+    def mock_bedrock_runtime_client(self):
+        """Create a mock bedrock-agent-runtime client."""
         return Mock()
     
     @pytest.fixture
-    def adapter_real(self, mock_bedrock_client):
-        """Create a Bedrock adapter in real mode with mocked boto3 client."""
-        with patch('boto3.client', return_value=mock_bedrock_client):
-            adapter = BedrockAdapter(mock_mode=False)
-            adapter.client = mock_bedrock_client
-            return adapter
+    def adapter(self, mock_bedrock_runtime_client):
+        """Create a Bedrock adapter instance with mocked boto3 client."""
+        with patch('boto3.client', return_value=mock_bedrock_runtime_client):
+            return BedrockAdapter()
     
-    def test_initialization_real_mode(self):
-        """Test adapter initializes correctly in real mode."""
+    def test_initialization(self, adapter, mock_bedrock_runtime_client):
+        """Test adapter initializes correctly with boto3 client."""
+        assert adapter.client is not None
+        assert adapter.client == mock_bedrock_runtime_client
+        assert adapter.region is not None
+        assert adapter.model_id is not None
+    
+    def test_initialization_creates_bedrock_client(self):
+        """Test adapter creates bedrock-agent-runtime client on init."""
         with patch('boto3.client') as mock_boto:
             mock_client = Mock()
             mock_boto.return_value = mock_client
             
-            adapter = BedrockAdapter(mock_mode=False)
+            adapter = BedrockAdapter()
             
-            assert adapter.mock_mode is False
-            assert adapter.client is not None
             mock_boto.assert_called_once_with(
                 'bedrock-agent-runtime',
                 region_name=adapter.region
             )
+            assert adapter.client == mock_client
     
-    def test_retrieve_and_generate_real_mode_success(self, adapter_real, mock_bedrock_client):
-        """Test retrieve_and_generate with real client returns parsed response."""
+    def test_retrieve_and_generate_success(self, adapter, mock_bedrock_runtime_client):
+        """Test retrieve_and_generate with successful AWS response."""
         query = "What is AWS Bedrock?"
         kb_id = "test-kb-id"
         
         # Mock AWS response
-        mock_bedrock_client.retrieve_and_generate.return_value = {
+        mock_bedrock_runtime_client.retrieve_and_generate.return_value = {
             'output': {
                 'text': 'AWS Bedrock is a fully managed service.'
             },
-            'sessionId': 'real-session-123',
+            'sessionId': 'session-123',
             'citations': [
                 {
                     'retrievedReferences': [
@@ -183,11 +71,11 @@ class TestBedrockAdapterRealMode:
             ]
         }
         
-        response = adapter_real.retrieve_and_generate(query, kb_id)
+        response = adapter.retrieve_and_generate(query, kb_id)
         
         # Verify API call
-        mock_bedrock_client.retrieve_and_generate.assert_called_once()
-        call_args = mock_bedrock_client.retrieve_and_generate.call_args[1]
+        mock_bedrock_runtime_client.retrieve_and_generate.assert_called_once()
+        call_args = mock_bedrock_runtime_client.retrieve_and_generate.call_args[1]
         assert call_args['input']['text'] == query
         assert call_args['retrieveAndGenerateConfiguration']['knowledgeBaseConfiguration']['knowledgeBaseId'] == kb_id
         
@@ -195,7 +83,7 @@ class TestBedrockAdapterRealMode:
         assert response["success"] is True
         data = response["data"]
         assert data.answer == 'AWS Bedrock is a fully managed service.'
-        assert data.session_id == 'real-session-123'
+        assert data.session_id == 'session-123'
         assert len(data.references) == 2
         
         # Verify references
@@ -204,25 +92,42 @@ class TestBedrockAdapterRealMode:
         assert data.references[0].score == 0.95
         assert data.references[1].score == 0.88
     
-    def test_retrieve_and_generate_with_custom_model_arn(self, adapter_real, mock_bedrock_client):
+    def test_retrieve_and_generate_with_custom_model_arn(self, adapter, mock_bedrock_runtime_client):
         """Test retrieve_and_generate uses custom model ARN when provided."""
         query = "Test query"
         kb_id = "test-kb-id"
         custom_model = "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-v2"
         
-        mock_bedrock_client.retrieve_and_generate.return_value = {
+        mock_bedrock_runtime_client.retrieve_and_generate.return_value = {
             'output': {'text': 'Answer'},
             'sessionId': 'session-456',
             'citations': []
         }
         
-        adapter_real.retrieve_and_generate(query, kb_id, model_arn=custom_model)
+        adapter.retrieve_and_generate(query, kb_id, model_arn=custom_model)
         
-        call_args = mock_bedrock_client.retrieve_and_generate.call_args[1]
+        call_args = mock_bedrock_runtime_client.retrieve_and_generate.call_args[1]
         kb_config = call_args['retrieveAndGenerateConfiguration']['knowledgeBaseConfiguration']
         assert kb_config['modelArn'] == custom_model
     
-    def test_retrieve_and_generate_with_retrieval_config(self, adapter_real, mock_bedrock_client):
+    def test_retrieve_and_generate_uses_default_model(self, adapter, mock_bedrock_runtime_client):
+        """Test retrieve_and_generate uses default model_id when model_arn not provided."""
+        query = "Test query"
+        kb_id = "test-kb-id"
+        
+        mock_bedrock_runtime_client.retrieve_and_generate.return_value = {
+            'output': {'text': 'Answer'},
+            'sessionId': 'session-default',
+            'citations': []
+        }
+        
+        adapter.retrieve_and_generate(query, kb_id)
+        
+        call_args = mock_bedrock_runtime_client.retrieve_and_generate.call_args[1]
+        kb_config = call_args['retrieveAndGenerateConfiguration']['knowledgeBaseConfiguration']
+        assert kb_config['modelArn'] == adapter.model_id
+    
+    def test_retrieve_and_generate_with_retrieval_config(self, adapter, mock_bedrock_runtime_client):
         """Test retrieve_and_generate includes retrieval configuration when provided."""
         query = "Test query"
         kb_id = "test-kb-id"
@@ -233,43 +138,43 @@ class TestBedrockAdapterRealMode:
             }
         }
         
-        mock_bedrock_client.retrieve_and_generate.return_value = {
+        mock_bedrock_runtime_client.retrieve_and_generate.return_value = {
             'output': {'text': 'Answer'},
             'sessionId': 'session-789',
             'citations': []
         }
         
-        adapter_real.retrieve_and_generate(query, kb_id, retrieval_config=retrieval_config)
+        adapter.retrieve_and_generate(query, kb_id, retrieval_config=retrieval_config)
         
-        call_args = mock_bedrock_client.retrieve_and_generate.call_args[1]
+        call_args = mock_bedrock_runtime_client.retrieve_and_generate.call_args[1]
         kb_config = call_args['retrieveAndGenerateConfiguration']['knowledgeBaseConfiguration']
         assert 'retrievalConfiguration' in kb_config
         assert kb_config['retrievalConfiguration'] == retrieval_config
     
-    def test_retrieve_and_generate_handles_empty_citations(self, adapter_real, mock_bedrock_client):
+    def test_retrieve_and_generate_handles_empty_citations(self, adapter, mock_bedrock_runtime_client):
         """Test retrieve_and_generate handles response with no citations."""
         query = "Test query"
         kb_id = "test-kb-id"
         
-        mock_bedrock_client.retrieve_and_generate.return_value = {
+        mock_bedrock_runtime_client.retrieve_and_generate.return_value = {
             'output': {'text': 'Answer without citations'},
             'sessionId': 'session-no-citations',
             'citations': []
         }
         
-        response = adapter_real.retrieve_and_generate(query, kb_id)
+        response = adapter.retrieve_and_generate(query, kb_id)
         
         assert response["success"] is True
         data = response["data"]
         assert data.answer == 'Answer without citations'
         assert len(data.references) == 0
     
-    def test_retrieve_and_generate_handles_missing_score(self, adapter_real, mock_bedrock_client):
+    def test_retrieve_and_generate_handles_missing_score(self, adapter, mock_bedrock_runtime_client):
         """Test retrieve_and_generate handles references without score."""
         query = "Test query"
         kb_id = "test-kb-id"
         
-        mock_bedrock_client.retrieve_and_generate.return_value = {
+        mock_bedrock_runtime_client.retrieve_and_generate.return_value = {
             'output': {'text': 'Answer'},
             'sessionId': 'session-no-score',
             'citations': [
@@ -285,31 +190,31 @@ class TestBedrockAdapterRealMode:
             ]
         }
         
-        response = adapter_real.retrieve_and_generate(query, kb_id)
+        response = adapter.retrieve_and_generate(query, kb_id)
         
         assert response["success"] is True
         data = response["data"]
         assert len(data.references) == 1
         assert data.references[0].score is None
     
-    def test_retrieve_and_generate_client_error_propagates(self, adapter_real, mock_bedrock_client):
+    def test_retrieve_and_generate_client_error_propagates(self, adapter, mock_bedrock_runtime_client):
         """Test retrieve_and_generate propagates ClientError."""
         query = "Test query"
         kb_id = "test-kb-id"
         
         # Mock ClientError
         error_response = {'Error': {'Code': 'AccessDeniedException', 'Message': 'Access denied'}}
-        mock_bedrock_client.retrieve_and_generate.side_effect = ClientError(
+        mock_bedrock_runtime_client.retrieve_and_generate.side_effect = ClientError(
             error_response, 'RetrieveAndGenerate'
         )
         
         with pytest.raises(ClientError) as exc_info:
-            adapter_real.retrieve_and_generate(query, kb_id)
+            adapter.retrieve_and_generate(query, kb_id)
         
         assert exc_info.value.response['Error']['Code'] == 'AccessDeniedException'
     
-    def test_start_ingestion_job_real_mode_success(self, adapter_real, mock_bedrock_client):
-        """Test start_ingestion_job with real client."""
+    def test_start_ingestion_job_success(self):
+        """Test start_ingestion_job with successful AWS response."""
         kb_id = "test-kb-id"
         data_source_id = "test-ds-id"
         
@@ -324,8 +229,12 @@ class TestBedrockAdapterRealMode:
             }
         }
         
-        with patch('boto3.client', return_value=mock_agent_client):
-            response = adapter_real.start_ingestion_job(kb_id, data_source_id)
+        with patch('boto3.client') as mock_boto:
+            # First call returns runtime client, second call returns agent client
+            mock_boto.side_effect = [Mock(), mock_agent_client]
+            
+            adapter = BedrockAdapter()
+            response = adapter.start_ingestion_job(kb_id, data_source_id)
         
         # Verify API call
         mock_agent_client.start_ingestion_job.assert_called_once_with(
@@ -341,7 +250,7 @@ class TestBedrockAdapterRealMode:
         assert data.knowledge_base_id == kb_id
         assert data.data_source_id == data_source_id
     
-    def test_start_ingestion_job_client_error_propagates(self, adapter_real, mock_bedrock_client):
+    def test_start_ingestion_job_client_error_propagates(self):
         """Test start_ingestion_job propagates ClientError."""
         kb_id = "test-kb-id"
         data_source_id = "test-ds-id"
@@ -353,8 +262,32 @@ class TestBedrockAdapterRealMode:
             error_response, 'StartIngestionJob'
         )
         
-        with patch('boto3.client', return_value=mock_agent_client):
+        with patch('boto3.client') as mock_boto:
+            # First call returns runtime client, second call returns agent client
+            mock_boto.side_effect = [Mock(), mock_agent_client]
+            
+            adapter = BedrockAdapter()
+            
             with pytest.raises(ClientError) as exc_info:
-                adapter_real.start_ingestion_job(kb_id, data_source_id)
+                adapter.start_ingestion_job(kb_id, data_source_id)
         
         assert exc_info.value.response['Error']['Code'] == 'ResourceNotFoundException'
+    
+    def test_multiple_queries_use_same_client(self, adapter, mock_bedrock_runtime_client):
+        """Test multiple queries reuse the same boto3 client instance."""
+        kb_id = "test-kb-id"
+        
+        mock_bedrock_runtime_client.retrieve_and_generate.return_value = {
+            'output': {'text': 'Answer'},
+            'sessionId': 'session-multi',
+            'citations': []
+        }
+        
+        # Make multiple calls
+        adapter.retrieve_and_generate("Query 1", kb_id)
+        adapter.retrieve_and_generate("Query 2", kb_id)
+        adapter.retrieve_and_generate("Query 3", kb_id)
+        
+        # Verify same client instance used
+        assert mock_bedrock_runtime_client.retrieve_and_generate.call_count == 3
+        assert adapter.client == mock_bedrock_runtime_client
