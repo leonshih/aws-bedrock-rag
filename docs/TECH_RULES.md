@@ -340,33 +340,162 @@ class RAGServiceTest:  # VIOLATION: Wrong naming convention
 
 ---
 
-### 10. Mock Usage (MANDATORY)
+### 10. Mock Usage & Testing Strategy (MANDATORY)
 
-**Rule:** Unit tests must mock all external dependencies.
+**Rule:** Unit tests must mock all external dependencies using standard Python testing libraries.
+
+#### ✅ CORRECT: Use `unittest.mock` or `pytest-mock`
 
 ```python
-# ✅ CORRECT: Mock external dependencies
+# Adapter Layer: Mock boto3 clients
+from unittest.mock import Mock, patch
+
+@patch('boto3.client')
+def test_s3_upload(mock_boto3_client):
+    mock_s3 = Mock()
+    mock_boto3_client.return_value = mock_s3
+    mock_s3.put_object.return_value = {'ETag': '"abc123"'}
+    
+    adapter = S3Adapter()
+    result = adapter.upload_file(b"content", "bucket", "key")
+    
+    mock_s3.put_object.assert_called_once()
+    assert result["success"] is True
+
+# Service Layer: Mock adapters
 @patch('app.services.rag.rag_service.BedrockAdapter')
-def test_query_basic(self, mock_bedrock_class):
-    mock_bedrock = Mock()
-    mock_bedrock_class.return_value = mock_bedrock
-
+def test_query_basic(mock_bedrock_class):
+    mock_adapter = Mock()
+    mock_adapter.retrieve_and_generate.return_value = {
+        "success": True,
+        "data": BedrockRAGResult(...)
+    }
+    mock_bedrock_class.return_value = mock_adapter
+    
     service = RAGService()
-    result = service.query(request)
+    result = service.query(request, tenant_id=UUID("..."))
+    
+    mock_adapter.retrieve_and_generate.assert_called_once()
 
-    mock_bedrock.retrieve_and_generate.assert_called_once()
+# Router Layer: Mock services
+@pytest.fixture
+def mock_rag_service():
+    service = Mock(spec=RAGService)
+    service.query.return_value = {"success": True, "data": {...}}
+    return service
 
-# ❌ BAD: No mocking (real AWS calls)
-def test_query_basic(self):
-    service = RAGService()  # Will make real AWS calls (VIOLATION)
-    result = service.query(request)
+async def test_chat_endpoint(client, mock_rag_service):
+    response = await client.post("/api/v1/chat", json={...})
+    assert response.status_code == 200
 ```
 
-**Mock Patterns:**
+#### ❌ FORBIDDEN: Built-in Mock Mode in Production Code
 
-- **Adapter Layer:** Mock `boto3` clients
-- **Service Layer:** Mock adapters
-- **Router Layer:** Mock services
+**DO NOT implement mock logic inside adapters or services:**
+
+```python
+# ❌ VIOLATION: Mock mode in production code
+class S3Adapter:
+    def __init__(self, mock_mode: bool = False):  # WRONG
+        self.mock_mode = mock_mode
+        if self.mock_mode:
+            self._mock_storage = {}
+    
+    def upload_file(self, ...):
+        if self.mock_mode:  # WRONG
+            return self._mock_upload(...)
+        # Real implementation
+```
+
+**Why This is Wrong:**
+
+1. **Violates Single Responsibility Principle:** Adapters should handle real AWS operations, not test logic
+2. **Maintenance Burden:** Every method needs dual implementation (real + mock)
+3. **Testing Anti-Pattern:** Tests should control mocking, not production code
+4. **Production Risk:** Mock code ships to production, increasing attack surface
+5. **Non-Standard:** Deviates from Python testing best practices
+
+#### ✅ CORRECT: Pure Production Code + Test-Time Mocking
+
+```python
+# app/adapters/s3/s3_adapter.py (Production Code)
+class S3Adapter:
+    """Pure adapter with only real AWS implementation."""
+    
+    def __init__(self):
+        config = get_config()
+        self.client = boto3.client('s3', region_name=config.AWS_REGION)
+    
+    def upload_file(
+        self,
+        file_content: bytes,
+        bucket: str,
+        key: str,
+        metadata: Optional[Dict[str, str]] = None
+    ) -> SuccessResponse[S3UploadResult]:
+        """Upload file to S3 (no mock logic here)."""
+        try:
+            extra_args = {}
+            if metadata:
+                extra_args['Metadata'] = metadata
+            
+            response = self.client.put_object(
+                Bucket=bucket,
+                Key=key,
+                Body=file_content,
+                **extra_args
+            )
+            
+            result = S3UploadResult(
+                etag=response.get('ETag', ''),
+                version_id=response.get('VersionId')
+            )
+            return create_success_response(result)
+        except ClientError as e:
+            raise e
+
+# app/adapters/s3/test_s3_adapter.py (Test Code)
+class TestS3Adapter:
+    """Tests mock boto3, not S3Adapter itself."""
+    
+    @patch('boto3.client')
+    def test_upload_file_success(self, mock_boto3_client):
+        # Setup mock
+        mock_s3 = Mock()
+        mock_boto3_client.return_value = mock_s3
+        mock_s3.put_object.return_value = {
+            'ETag': '"mock-etag"',
+            'VersionId': 'v1'
+        }
+        
+        # Test real code path with mocked dependency
+        adapter = S3Adapter()
+        result = adapter.upload_file(b"test", "bucket", "key")
+        
+        # Verify
+        assert result["success"] is True
+        assert result["data"].etag == '"mock-etag"'
+        mock_s3.put_object.assert_called_once_with(
+            Bucket="bucket",
+            Key="key",
+            Body=b"test"
+        )
+```
+
+#### Mock Patterns by Layer
+
+| Layer | What to Mock | How to Mock |
+|-------|-------------|-------------|
+| **Adapter** | `boto3` clients | `@patch('boto3.client')` |
+| **Service** | Adapter instances | `@patch('app.services.*.*.AdapterClass')` |
+| **Router** | Service instances | `@pytest.fixture` with `Mock(spec=ServiceClass)` |
+
+#### Additional Testing Guidelines
+
+1. **Fixture Organization:** Use `conftest.py` for shared fixtures
+2. **Mock Verification:** Always assert mock calls with `.assert_called_once()` or `.assert_called_with()`
+3. **Real vs Mock:** Never mix real AWS calls in unit tests (use integration tests for that)
+4. **Deterministic Tests:** Mock responses should be predictable and not depend on external state
 
 ---
 
@@ -746,4 +875,5 @@ Before submitting a PR, verify:
 
 ## 📝 Version History
 
+- **v1.1** (2025-12-30): Added comprehensive mock usage guidelines and testing strategy
 - **v1.0** (2025-12-18): Initial rules documentation
