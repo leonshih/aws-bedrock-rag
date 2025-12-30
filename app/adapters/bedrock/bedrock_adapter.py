@@ -3,7 +3,6 @@ Bedrock Adapter
 
 Low-level adapter for Amazon Bedrock Knowledge Base interactions.
 """
-import json
 from typing import Dict, Optional
 import boto3
 from botocore.exceptions import ClientError
@@ -16,25 +15,15 @@ from app.dtos.adapters.bedrock import BedrockRAGResult, BedrockRetrievalReferenc
 class BedrockAdapter:
     """Adapter for Amazon Bedrock Agent Runtime API."""
     
-    def __init__(self, mock_mode: Optional[bool] = None):
-        """
-        Initialize Bedrock adapter.
-        
-        Args:
-            mock_mode: Override config mock mode. If None, uses config value.
-        """
+    def __init__(self):
+        """Initialize Bedrock adapter with AWS Bedrock client."""
         config = get_config()
-        self.mock_mode = mock_mode if mock_mode is not None else config.is_mock_enabled()
         self.region = config.AWS_REGION
         self.model_id = config.BEDROCK_MODEL_ID
-        
-        if not self.mock_mode:
-            self.client = boto3.client(
-                'bedrock-agent-runtime',
-                region_name=self.region
-            )
-        else:
-            self.client = None
+        self.client = boto3.client(
+            'bedrock-agent-runtime',
+            region_name=self.region
+        )
     
     def retrieve_and_generate(
         self,
@@ -58,9 +47,6 @@ class BedrockAdapter:
         Raises:
             ClientError: If AWS API call fails.
         """
-        if self.mock_mode:
-            return self._mock_retrieve_and_generate(query, kb_id)
-        
         # Use model_arn if provided, otherwise use model_id directly
         # For cross-region inference profiles, AWS expects the model ID, not full ARN
         # For standard regional models, both model ID and ARN work
@@ -127,9 +113,6 @@ class BedrockAdapter:
         Raises:
             ClientError: If AWS API call fails.
         """
-        if self.mock_mode:
-            return self._mock_start_ingestion_job(kb_id, data_source_id)
-        
         # Note: This uses bedrock-agent client, not bedrock-agent-runtime
         agent_client = boto3.client('bedrock-agent', region_name=self.region)
         
@@ -150,38 +133,3 @@ class BedrockAdapter:
             return create_success_response(result)
         except ClientError as e:
             raise e
-    
-    def _mock_retrieve_and_generate(
-        self,
-        query: str,
-        kb_id: str
-    ) -> SuccessResponse[BedrockRAGResult]:
-        """Mock implementation for local testing."""
-        references = [
-            BedrockRetrievalReference(
-                content='This is mock reference content from the knowledge base.',
-                s3_uri='s3://mock-bucket/mock-document.pdf',
-                score=0.95
-            )
-        ]
-        
-        result = BedrockRAGResult(
-            answer=f'Mock response for query: "{query}". This is a simulated answer from the Knowledge Base.',
-            session_id='mock-session-id',
-            references=references
-        )
-        return create_success_response(result)
-    
-    def _mock_start_ingestion_job(
-        self,
-        kb_id: str,
-        data_source_id: str
-    ) -> SuccessResponse[BedrockIngestionJobResult]:
-        """Mock implementation for local testing."""
-        result = BedrockIngestionJobResult(
-            job_id='mock-ingestion-job-id',
-            status='STARTING',
-            knowledge_base_id=kb_id,
-            data_source_id=data_source_id
-        )
-        return create_success_response(result)
