@@ -25,7 +25,6 @@ class TestIngestionService:
         config.S3_BUCKET_NAME = "test-bucket"
         config.BEDROCK_KB_ID = "test-kb-id"
         config.BEDROCK_DATA_SOURCE_ID = "test-ds-id"
-        config.MOCK_MODE = True
         return config
     
     @pytest.fixture

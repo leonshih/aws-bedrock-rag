@@ -9,12 +9,10 @@ import pytest
 
 def pytest_configure(config):
     """
-    Force MOCK_MODE=true for all test runs.
+    Configure test environment settings.
     
-    This ensures tests never accidentally hit real AWS services,
-    preventing unexpected costs and test failures due to missing credentials.
+    Sets APP_ENV to 'test' for all test runs.
     """
-    os.environ["MOCK_MODE"] = "true"
     os.environ["APP_ENV"] = "test"
 
 

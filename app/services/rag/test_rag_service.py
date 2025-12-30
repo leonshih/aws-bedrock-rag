@@ -23,7 +23,6 @@ class TestRAGService:
         config.AWS_REGION = "us-east-1"
         config.BEDROCK_KB_ID = "test-kb-id"
         config.BEDROCK_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-        config.MOCK_MODE = True
         return config
     
     @pytest.fixture
