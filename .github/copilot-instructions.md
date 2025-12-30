@@ -50,8 +50,13 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 
 - **AUTOMATIC ACTION:** After coding, you MUST update the documentation:
   1.  **`PROJECT_STATUS.md`**: Mark **only** the completed task as `[x]`.
-  2.  **`ARCHITECTURE.md`**: Update if you changed API contracts, DB schema, or layer logic.
-  3.  **`docs/GLOSSARY.md`**: Add new terms if introduced.
+  2.  **Test Coverage**: Update coverage statistics by running:
+      ```bash
+      PYTHONPATH=. .venv/bin/pytest app/ --cov=app --cov-report=term-missing --cov-report=json:coverage.json -q
+      ```
+      Then update the coverage table in `PROJECT_STATUS.md` with new percentages for affected components.
+  3.  **`ARCHITECTURE.md`**: Update if you changed API contracts, DB schema, or layer logic.
+  4.  **`docs/GLOSSARY.md`**: Add new terms if introduced.
 - **Review:** Present the code changes AND documentation updates together.
 
 ## Step 5: Finalization (Commit)
@@ -86,6 +91,7 @@ _Refer to `@docs/TECH_RULES.md` for full details, but strictly enforce these:_
     - Always use `Depends()` for services in routers.
     - Never instantiate Services/Adapters manually inside business logic.
 6.  **Multi-Tenant Architecture (CRITICAL):**
+
     - **tenant_id is NEVER part of request DTOs** (e.g., ChatRequest, FileUploadRequest)
     - **Flow:** `X-Tenant-ID` header → TenantMiddleware → `request.state.tenant_context`
     - **Router Layer:** Extract tenant_id using `get_tenant_context(request)`, pass as **independent parameter** to Service

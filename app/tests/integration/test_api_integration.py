@@ -83,7 +83,7 @@ class TestChatRouterIntegration:
         # Should not fail validation
         assert response.status_code != 422
 
-    def test_chat_endpoint_service_initialization(self, client, config):
+    def test_chat_endpoint_service_initialization(self, client):
         """Test chat endpoint properly initializes RAG service."""
         # This test ensures the dependency injection works
         response = client.post(
@@ -92,10 +92,8 @@ class TestChatRouterIntegration:
             headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         
-        # If service initialization failed, we'd get 500 with specific error
-        # In mock mode, should work fine
-        if config.MOCK_MODE:
-            assert response.status_code == 200
+        # In mock mode (always enabled in tests), should work fine
+        assert response.status_code == 200
 
 
 class TestIngestRouterIntegration:
@@ -107,17 +105,22 @@ class TestIngestRouterIntegration:
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
 
-    def test_list_files_with_real_service(self, client, config):
-        """Test list files endpoint with real service initialization."""
+    def test_list_files_with_real_service(self, client):
+        """Test list files endpoint with service initialization."""
         response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
         
-        # In mock mode, should return empty list or mocked data
-        if config.MOCK_MODE:
-            assert response.status_code == 200
-            data = response.json()
-            assert "files" in data
-            assert "total_count" in data
-            assert isinstance(data["files"], list)
+        # Should return successful response with file list
+        assert response.status_code == 200
+        json_data = response.json()
+        # Response has success wrapper
+        assert "success" in json_data
+        assert json_data["success"] is True
+        assert "data" in json_data
+        # Files are inside data object
+        data = json_data["data"]
+        assert "files" in data
+        assert "total_count" in data
+        assert isinstance(data["files"], list)
 
     def test_upload_file_endpoint_exists(self, client):
         """Test upload file endpoint is registered and accessible."""
@@ -153,13 +156,12 @@ class TestIngestRouterIntegration:
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
 
-    def test_delete_file_with_real_service(self, client, config):
-        """Test delete endpoint with real service initialization."""
+    def test_delete_file_with_real_service(self, client):
+        """Test delete endpoint with service initialization."""
         response = client.delete("/files/nonexistent.txt", headers={"X-Tenant-ID": TEST_TENANT_ID})
         
-        # In mock mode or real mode, should handle gracefully
-        # Either 200 (success), 404 (not found), or 500 (error)
-        assert response.status_code in [200, 404, 500]
+        # In mock mode, should handle gracefully (200 success)
+        assert response.status_code == 200
 
 
 class TestAPIExceptionHandling:
@@ -206,7 +208,7 @@ class TestAPIExceptionHandling:
 class TestAPIDependencyInjection:
     """Test dependency injection works correctly in API layer."""
 
-    def test_chat_router_dependency_injection(self, client, config):
+    def test_chat_router_dependency_injection(self, client):
         """Test chat router properly injects RAG service."""
         # This would fail if dependency injection is broken
         response = client.post(
@@ -216,20 +218,17 @@ class TestAPIDependencyInjection:
         )
         
         # Should not get TypeError about missing parameters
-        # In mock mode, should work
-        if config.MOCK_MODE:
-            assert response.status_code == 200
-            assert "TypeError" not in response.text
+        assert response.status_code == 200
+        assert "TypeError" not in response.text
 
-    def test_ingest_router_dependency_injection(self, client, config):
+    def test_ingest_router_dependency_injection(self, client):
         """Test ingest router properly injects Ingestion service."""
         # This would fail if dependency injection is broken
         response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
         
         # Should not get TypeError about missing parameters
-        if config.MOCK_MODE:
-            assert response.status_code == 200
-            assert "TypeError" not in response.text
+        assert response.status_code == 200
+        assert "TypeError" not in response.text
 
     def test_multiple_requests_use_different_service_instances(self, client):
         """Test each request gets fresh service instance."""
