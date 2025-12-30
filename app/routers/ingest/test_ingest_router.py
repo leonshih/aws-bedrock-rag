@@ -88,11 +88,14 @@ def test_list_files_success(client, mock_ingestion_service):
 
 def test_list_files_with_prefix(client, mock_ingestion_service):
     """Test file listing with prefix filter."""
+    from uuid import UUID
     response = client.get("/files?prefix=documents/2024/", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
+    # Verify tenant_id was passed to service
     call_args = mock_ingestion_service.list_documents.call_args
-    assert call_args[1]["prefix"] == "documents/2024/"
+    # tenant_id should be passed as keyword argument (as UUID object)
+    assert call_args[1]["tenant_id"] == UUID(TEST_TENANT_ID)
 
 
 def test_list_files_empty(client, mock_ingestion_service):

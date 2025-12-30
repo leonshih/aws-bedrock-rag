@@ -11,6 +11,9 @@ from app.services.ingestion import IngestionService
 from app.dtos.routers.ingest import FileMetadata, FileResponse
 from app.utils.config import Config
 
+# Test tenant ID for multi-tenant testing
+TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440000"
+
 
 class TestIngestionService:
     """Tests for IngestionService."""
@@ -60,7 +63,8 @@ class TestIngestionService:
         file_content = b"Test file content"
         response = service.upload_document(
             file_content=file_content,
-            filename="test.pdf"
+            filename="test.pdf",
+            tenant_id=TEST_TENANT_ID
         )
         
         # Verify response
@@ -70,14 +74,14 @@ class TestIngestionService:
         assert isinstance(response["data"], FileResponse)
         assert response["data"].filename == "test.pdf"
         assert response["data"].size == len(file_content)
-        assert response["data"].s3_key == "documents/test.pdf"
+        assert response["data"].s3_key == f"documents/{TEST_TENANT_ID}/test.pdf"
         assert response["data"].metadata is None
         
-        # Verify S3 upload was called
+        # Verify S3 upload was called with tenant-specific path
         mock_s3.upload_file.assert_called_once_with(
             file_content=file_content,
             bucket="test-bucket",
-            key="documents/test.pdf"
+            key=f"documents/{TEST_TENANT_ID}/test.pdf"
         )
         
         # Verify sync was triggered
@@ -106,6 +110,7 @@ class TestIngestionService:
         response = service.upload_document(
             file_content=file_content,
             filename="document.pdf",
+            tenant_id=TEST_TENANT_ID,
             metadata=metadata
         )
         
@@ -116,13 +121,13 @@ class TestIngestionService:
         # Verify two S3 uploads: file + metadata
         assert mock_s3.upload_file.call_count == 2
         
-        # Check first call (main file)
+        # Check first call (main file) - with tenant path
         first_call = mock_s3.upload_file.call_args_list[0]
-        assert first_call[1]["key"] == "documents/document.pdf"
+        assert first_call[1]["key"] == f"documents/{TEST_TENANT_ID}/document.pdf"
         
-        # Check second call (metadata sidecar)
+        # Check second call (metadata sidecar) - with tenant path
         second_call = mock_s3.upload_file.call_args_list[1]
-        assert second_call[1]["key"] == "documents/document.pdf.metadata.json"
+        assert second_call[1]["key"] == f"documents/{TEST_TENANT_ID}/document.pdf.metadata.json"
         metadata_content = second_call[1]["file_content"].decode('utf-8')
         metadata_json = json.loads(metadata_content)
         assert metadata_json["metadataAttributes"]["author"] == "Dr. Smith"
@@ -143,7 +148,7 @@ class TestIngestionService:
         mock_bedrock_adapter_class.return_value = Mock()
         
         service = IngestionService(config=mock_config)
-        response = service.list_documents()
+        response = service.list_documents(tenant_id=TEST_TENANT_ID)
         
         assert response["success"] is True
         assert response["data"].total_count == 0
@@ -162,13 +167,13 @@ class TestIngestionService:
             "data": S3ListResult(
                 objects=[
                     S3ObjectInfo(
-                        key="documents/doc1.pdf",
+                        key=f"documents/{TEST_TENANT_ID}/doc1.pdf",
                         size=1024,
                         last_modified="2023-12-01T00:00:00",
                         etag="etag1"
                     ),
                     S3ObjectInfo(
-                        key="documents/doc2.pdf",
+                        key=f"documents/{TEST_TENANT_ID}/doc2.pdf",
                         size=2048,
                         last_modified="2023-12-02T00:00:00",
                         etag="etag2"
@@ -182,7 +187,7 @@ class TestIngestionService:
         mock_bedrock_adapter_class.return_value = Mock()
         
         service = IngestionService(config=mock_config)
-        response = service.list_documents()
+        response = service.list_documents(tenant_id=TEST_TENANT_ID)
         
         assert response["success"] is True
         assert response["data"].total_count == 2
@@ -203,13 +208,13 @@ class TestIngestionService:
             "data": S3ListResult(
                 objects=[
                     S3ObjectInfo(
-                        key="documents/doc1.pdf",
+                        key=f"documents/{TEST_TENANT_ID}/doc1.pdf",
                         size=1024,
                         last_modified="2023-12-01T00:00:00",
                         etag="etag1"
                     ),
                     S3ObjectInfo(
-                        key="documents/doc1.pdf.metadata.json",
+                        key=f"documents/{TEST_TENANT_ID}/doc1.pdf.metadata.json",
                         size=256,
                         last_modified="2023-12-01T00:00:00",
                         etag="etag2"
@@ -226,7 +231,7 @@ class TestIngestionService:
         mock_bedrock_adapter_class.return_value = Mock()
         
         service = IngestionService(config=mock_config)
-        response = service.list_documents()
+        response = service.list_documents(tenant_id=TEST_TENANT_ID)
         
         # Should only list the main file, not the metadata file
         assert response["success"] is True
@@ -245,7 +250,7 @@ class TestIngestionService:
         mock_bedrock_adapter_class.return_value = mock_bedrock
         
         service = IngestionService(config=mock_config)
-        response = service.delete_document("test.pdf")
+        response = service.delete_document("test.pdf", tenant_id=TEST_TENANT_ID)
         
         # Verify response
         assert response["success"] is True
@@ -253,13 +258,11 @@ class TestIngestionService:
         assert response["data"].status == "deleted"
         assert "sync triggered" in response["data"].message
         
-        # Verify S3 deletes were called
+        # Verify S3 delete was called with tenant-specific path
         assert mock_s3.delete_file.call_count == 2
-        
-        # Check deletions
         calls = mock_s3.delete_file.call_args_list
-        assert calls[0][1]["key"] == "documents/test.pdf"
-        assert calls[1][1]["key"] == "documents/test.pdf.metadata.json"
+        assert calls[0][1]["key"] == f"documents/{TEST_TENANT_ID}/test.pdf"
+        assert calls[1][1]["key"] == f"documents/{TEST_TENANT_ID}/test.pdf.metadata.json"
         
         # Verify sync was triggered
         mock_bedrock.start_ingestion_job.assert_called_once()
@@ -282,7 +285,7 @@ class TestIngestionService:
         
         service = IngestionService(config=mock_config)
         # Should not raise exception
-        response = service.delete_document("test.pdf")
+        response = service.delete_document("test.pdf", tenant_id=TEST_TENANT_ID)
         
         assert response["success"] is True
         assert response["data"].status == "deleted"

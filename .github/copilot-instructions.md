@@ -59,7 +59,7 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 - **MANDATORY:** After user approves the code and docs, you MUST execute the Git commit immediately.
 - **DO NOT skip this step** - always commit before moving to the next task.
 - **Format:** `feat/fix/docs/refactor: <clear description>`
-- **Example:** 
+- **Example:**
   ```bash
   git add -A && git commit -m "feat: implement tenant id validation middleware"
   ```
@@ -91,16 +91,17 @@ _Refer to `@docs/TECH_RULES.md` for full details, but strictly enforce these:_
     - **Router Layer:** Extract tenant_id using `get_tenant_context(request)`, pass as **independent parameter** to Service
     - **Service Layer:** Accept `tenant_id: UUID` as separate parameter (NOT in DTO)
     - **Example Pattern:**
+
       ```python
       # ✅ CORRECT - Router
       async def endpoint(request: Request, dto: ChatRequest):
           tenant_context = get_tenant_context(request)
           service.method(dto, tenant_id=tenant_context.tenant_id)
-      
+
       # ✅ CORRECT - Service
       def method(self, dto: ChatRequest, tenant_id: UUID):
           logger.info(f"Processing for tenant {tenant_id}")
-      
+
       # ❌ WRONG - Do NOT include tenant_id in DTO
       class ChatRequest(BaseModel):
           tenant_id: UUID  # NEVER DO THIS

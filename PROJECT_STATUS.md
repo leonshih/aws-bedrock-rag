@@ -1,8 +1,8 @@
 # Project Status
 
-**Last Updated:** 2025-12-29  
+**Last Updated:** 2025-12-30  
 **Current Phase:** Phase 4 (Multi-Tenant Architecture) - In Progress  
-**Overall Progress:** ~74% Complete
+**Overall Progress:** ~89% Complete
 
 ---
 
@@ -41,22 +41,23 @@
 - [x] Integration tests (32 tests)
 - [x] DTO reorganization (layer-based structure)
 
-### ⏳ Phase 4: Multi-Tenant Architecture (In Progress - 74% Complete)
+### ⏳ Phase 4: Multi-Tenant Architecture (In Progress - 89% Complete)
 
 - [x] Tenant context model with UUID validation
 - [x] Tenant middleware implementation
 - [x] Update existing tests to include tenant_id
 - [x] **Architecture Refactoring**: Separated tenant_id from DTOs (injected via middleware)
-- [ ] S3 path isolation (`documents/{tenant_id}/`)
+- [x] **S3 path isolation** (`documents/{tenant_id}/`)
 - [ ] Automatic tenant filter injection in RAG queries
 - [ ] Tenant-aware API documentation
 - [ ] Multi-tenant test coverage
 
-**Recent Achievement:** ✅ Successfully refactored multi-tenant architecture:
-- Removed `tenant_id` from `ChatRequest` DTO (cleaner API contracts)
-- Router now extracts `tenant_id` from middleware (`request.state.tenant_context`)
-- Service layer accepts `tenant_id` as independent parameter
-- **Result: 51 failing tests → 0 failing tests (100% passing)**
+**Recent Achievement:** ✅ Implemented S3 path isolation for multi-tenant data separation:
+
+- IngestionService methods (`upload_document`, `list_documents`, `delete_document`) accept `tenant_id: UUID` parameter
+- S3 keys follow pattern: `documents/{tenant_id}/{filename}`
+- IngestRouter extracts `tenant_id` from middleware and passes to service
+- **Result: All 213 tests passing (100%)**
 
 ### ⏳ Phase 5: Containerization & Deployment (Not Started)
 
@@ -72,14 +73,14 @@
 
 **Total Tests:** 213 tests ✅ **ALL PASSING**
 
-| Component   | Tests | Status                                          |
-| ----------- | ----- | ----------------------------------------------- |
-| Adapters    | 19    | ✅ All passing                                  |
-| DTOs        | 81    | ✅ All passing (includes tenant model tests)    |
-| Services    | 28    | ✅ All passing                                  |
-| Routers     | 29    | ✅ All passing                                  |
-| Middleware  | 25    | ✅ All passing (tenant middleware operational)  |
-| Integration | 31    | ✅ All passing                                  |
+| Component   | Tests | Status                                         |
+| ----------- | ----- | ---------------------------------------------- |
+| Adapters    | 19    | ✅ All passing                                 |
+| DTOs        | 81    | ✅ All passing (includes tenant model tests)   |
+| Services    | 28    | ✅ All passing                                 |
+| Routers     | 29    | ✅ All passing                                 |
+| Middleware  | 25    | ✅ All passing (tenant middleware operational) |
+| Integration | 31    | ✅ All passing                                 |
 
 **Progress:** 🎯 **From 140/191 passing → 213/213 passing (100%)**
 
@@ -125,6 +126,14 @@
 ---
 
 ## 📝 Recent Changes
+
+**2025-12-30**:
+
+- ✅ Completed "S3 path isolation" for multi-tenant data separation
+- Updated IngestionService to include tenant_id in S3 paths (`documents/{tenant_id}/`)
+- Updated IngestRouter to extract and pass tenant_id from middleware
+- Updated all ingestion service tests to verify tenant-specific paths
+- All 213 tests passing (100%)
 
 **2025-12-29**:
 

@@ -1,6 +1,6 @@
 """Ingest router for document management endpoints."""
 
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Request
 from typing import Annotated, Optional
 import json
 
@@ -9,6 +9,7 @@ from app.services.ingestion import IngestionService
 from app.adapters.s3 import S3Adapter
 from app.adapters.bedrock import BedrockAdapter
 from app.utils.config import Config
+from app.middleware.tenant_middleware import get_tenant_context
 
 router = APIRouter(
     prefix="/files",
@@ -61,14 +62,14 @@ def get_ingestion_service() -> IngestionService:
     }
 )
 async def list_files(
-    prefix: Optional[str] = None,
+    request: Request,
     ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
 ) -> dict:
     """
-    List all documents in the Knowledge Base.
+    List all documents for the authenticated tenant.
     
     Args:
-        prefix: Optional S3 prefix to filter files
+        request: FastAPI request object (to access middleware state)
         ingestion_service: Injected Ingestion service instance
         
     Returns:
@@ -77,7 +78,11 @@ async def list_files(
     Raises:
         HTTPException: 500 for server errors
     """
-    response = ingestion_service.list_documents(prefix=prefix)
+    # Extract tenant_id from middleware (validated by TenantMiddleware)
+    tenant_context = get_tenant_context(request)
+    
+    # Pass tenant_id to service for path isolation
+    response = ingestion_service.list_documents(tenant_id=tenant_context.tenant_id)
     return response
 
 
@@ -122,6 +127,7 @@ async def list_files(
     }
 )
 async def upload_file(
+    request: Request,
     file: Annotated[UploadFile, File(description="The file to upload")],
     metadata: Annotated[Optional[str], Form(description="Optional JSON metadata")] = None,
     ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
@@ -130,6 +136,7 @@ async def upload_file(
     Upload a document to the Knowledge Base.
     
     Args:
+        request: FastAPI request object (to access middleware state)
         file: The uploaded file
         metadata: Optional JSON string with custom metadata
         ingestion_service: Injected Ingestion service instance
@@ -140,6 +147,9 @@ async def upload_file(
     Raises:
         HTTPException: 400 for invalid input, 500 for server errors
     """
+    # Extract tenant_id from middleware (validated by TenantMiddleware)
+    tenant_context = get_tenant_context(request)
+    
     # Read file content
     file_content = await file.read()
     
@@ -158,10 +168,11 @@ async def upload_file(
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
     
-    # Upload document
+    # Upload document with tenant_id for path isolation
     response = ingestion_service.upload_document(
         file_content=file_content,
         filename=file.filename,
+        tenant_id=tenant_context.tenant_id,
         metadata=metadata_dict
     )
     return response
@@ -195,6 +206,7 @@ async def upload_file(
 )
 async def delete_file(
     filename: str,
+    request: Request,
     ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
 ) -> dict:
     """
@@ -202,6 +214,7 @@ async def delete_file(
     
     Args:
         filename: Name of the file to delete
+        request: FastAPI request object (to access middleware state)
         ingestion_service: Injected Ingestion service instance
         
     Returns:
@@ -210,5 +223,12 @@ async def delete_file(
     Raises:
         HTTPException: 404 if file not found, 500 for server errors
     """
-    response = ingestion_service.delete_document(filename=filename)
+    # Extract tenant_id from middleware (validated by TenantMiddleware)
+    tenant_context = get_tenant_context(request)
+    
+    # Delete document with tenant_id for path isolation
+    response = ingestion_service.delete_document(
+        filename=filename,
+        tenant_id=tenant_context.tenant_id
+    )
     return response

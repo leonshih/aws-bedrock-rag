@@ -8,6 +8,7 @@ import json
 import logging
 from typing import List, Optional, Dict, Any, BinaryIO
 from datetime import datetime
+from uuid import UUID
 from app.adapters.s3 import S3Adapter
 from app.adapters.bedrock import BedrockAdapter
 from app.dtos.routers.ingest import FileResponse, FileListResponse, FileDeleteResponse, FileMetadata
@@ -35,6 +36,7 @@ class IngestionService:
         self,
         file_content: bytes,
         filename: str,
+        tenant_id: UUID,
         metadata: Optional[Dict[str, Any]] = None
     ) -> dict:
         """
@@ -43,15 +45,16 @@ class IngestionService:
         Args:
             file_content: Binary file content
             filename: Name of the file
+            tenant_id: Tenant identifier for path isolation
             metadata: Optional custom metadata attributes as dict
             
         Returns:
             Dict with success flag and FileResponse data
         """
-        logger.info(f"Uploading document: {filename} ({len(file_content)} bytes)")
+        logger.info(f"Uploading document for tenant {tenant_id}: {filename} ({len(file_content)} bytes)")
         
-        # Construct S3 key (store in documents/ prefix)
-        s3_key = f"documents/{filename}"
+        # Construct S3 key with tenant isolation (documents/{tenant_id}/filename)
+        s3_key = f"documents/{tenant_id}/{filename}"
         
         # Upload the document to S3
         s3_upload_res = self.s3_adapter.upload_file(
@@ -94,19 +97,21 @@ class IngestionService:
             )
         }
     
-    def list_documents(self, prefix: str = "documents/") -> dict:
+    def list_documents(self, tenant_id: UUID) -> dict:
         """
-        List all documents in the Knowledge Base.
+        List all documents for a specific tenant.
         
         Args:
-            prefix: S3 prefix to filter documents (default: documents/)
+            tenant_id: Tenant identifier for path isolation
             
         Returns:
             Dict with success flag and FileListResponse data
         """
-        logger.info(f"Listing documents with prefix: {prefix}")
+        # Construct tenant-specific prefix
+        prefix = f"documents/{tenant_id}/"
+        logger.info(f"Listing documents for tenant {tenant_id} with prefix: {prefix}")
         
-        # List all objects in the bucket with the prefix
+        # List all objects in the bucket with the tenant prefix
         s3_response = self.s3_adapter.list_files(
             bucket=self.bucket_name,
             prefix=prefix
@@ -168,20 +173,21 @@ class IngestionService:
             )
         }
     
-    def delete_document(self, filename: str) -> dict:
+    def delete_document(self, filename: str, tenant_id: UUID) -> dict:
         """
         Delete a document and its metadata from S3, then trigger sync.
         
         Args:
             filename: Name of the file to delete
+            tenant_id: Tenant identifier for path isolation
             
         Returns:
             Dict with success flag and FileDeleteResponse data
         """
-        logger.info(f"Deleting document: {filename}")
+        logger.info(f"Deleting document for tenant {tenant_id}: {filename}")
         
-        # Construct S3 keys
-        s3_key = f"documents/{filename}"
+        # Construct S3 keys with tenant isolation
+        s3_key = f"documents/{tenant_id}/{filename}"
         metadata_key = f"{s3_key}.metadata.json"
         
         # Delete the main document
