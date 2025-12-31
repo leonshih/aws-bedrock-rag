@@ -84,7 +84,7 @@ _Refer to `@docs/TECH_RULES.md` for full details, but strictly enforce these:_
     - All DTOs must be Pydantic `BaseModel`.
 3.  **Error Handling:**
     - **NO `try-catch`** in Routers/Services. Let `middleware/exception_handlers.py` handle it.
-    - Response format must always be: `{ "success": bool, "data": ... }`.
+    - Services return Pydantic Models directly. Use HTTP Status Codes (200/201/404/500) to indicate success/failure.
 4.  **Type Hints:**
     - Mandatory for ALL functions and arguments.
 5.  **Dependency Injection:**
