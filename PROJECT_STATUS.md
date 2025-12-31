@@ -1,8 +1,8 @@
 # Project Status
 
-**Last Updated:** 2025-12-30  
-**Current Phase:** Phase 4 (Multi-Tenant Architecture) - In Progress  
-**Overall Progress:** ~89% Complete
+**Last Updated:** 2025-12-31  
+**Current Phase:** Phase 5 (Response Format Refactoring) - In Progress  
+**Overall Progress:** ~90% Complete
 
 ---
 
@@ -41,7 +41,7 @@
 - [x] Integration tests (32 tests)
 - [x] DTO reorganization (layer-based structure)
 
-### ⏳ Phase 4: Multi-Tenant Architecture (In Progress - 89% Complete)
+### ⏳ Phase 4: Multi-Tenant Architecture (In Progress - 63% Complete)
 
 - [x] Tenant context model with UUID validation
 - [x] Tenant middleware implementation
@@ -52,16 +52,53 @@
 - [ ] Tenant-aware API documentation
 - [ ] Multi-tenant test coverage
 
-**Recent Achievement:** ✅ Enhanced test coverage with Real Mode AWS adapter testing:
+### ⏳ Phase 5: Response Format Refactoring (In Progress - 0% Complete)
 
-- Added comprehensive Real Mode tests for Bedrock & S3 Adapters using mocked boto3 clients
-- Added missing exception handler tests (TenantMissingError, TenantValidationError, ParamValidationError)
-- **Bedrock Adapter: 51% → 100% coverage** (49 lines covered)
-- **S3 Adapter: 59% → 94% coverage** (87 lines covered)
-- **Middleware: 89% → 100% exception handlers coverage**
-- **Result: 234 tests passing (100%), Overall coverage: 96% → 99%**
+**Objective:** Migrate from wrapper pattern `{"success": bool, "data": T}` to REST standard (direct Pydantic Model + HTTP Status Codes)
 
-### ⏳ Phase 5: Containerization & Deployment (Not Started)
+**Impact Analysis:**
+
+- 2 Service files (RAG, Ingestion)
+- 2 Router files (Chat, Ingest)
+- 1 Common DTO file (`app/dtos/common.py`)
+- 15+ test files affected
+- ~50 test assertions need updating
+
+**Implementation Checklist:**
+
+1. **Core DTOs Removal** (1 file)
+
+   - [ ] Remove `SuccessResponse[T]` and `ErrorResponse` from `app/dtos/common.py`
+   - [ ] Remove helper functions `create_success_response()` and `create_error_response()`
+   - [ ] Keep domain-specific DTOs (TenantContext, ErrorDetail, etc.)
+
+2. **Service Layer Refactoring** (2 files)
+
+   - [ ] Refactor `RAGService.query()` to return `ChatResponse` directly (remove wrapper)
+   - [ ] Refactor `IngestionService.upload_document()` to return `FileUploadResponse` directly
+   - [ ] Refactor `IngestionService.list_documents()` to return `FileListResponse` directly
+   - [ ] Refactor `IngestionService.delete_document()` to return `DeleteFileResponse` directly
+
+3. **Router Layer Adjustment** (2 files)
+
+   - [ ] Update `ChatRouter.chat()` to return direct model with `status_code=200`
+   - [ ] Update `IngestRouter.upload()` to return direct model with `status_code=201`
+   - [ ] Update `IngestRouter.list_files()` to return direct model with `status_code=200`
+   - [ ] Update `IngestRouter.delete_file()` to return direct model with `status_code=200`
+
+4. **Test Suite Updates** (15+ files)
+
+   - [ ] Update Service tests: Remove `["data"]` access pattern, assert on direct model fields
+   - [ ] Update Router tests: Verify HTTP status codes, assert on response model fields
+   - [ ] Update Integration tests: Adjust assertion patterns for new response format
+   - [ ] Update DTO tests: Remove SuccessResponse/ErrorResponse test cases
+
+5. **Documentation Updates** (3 files)
+   - [ ] Update `ARCHITECTURE.md`: Revise response format examples
+   - [ ] Update `GLOSSARY.md`: Remove wrapper pattern terminology
+   - [ ] Update `README.md`: Update API examples with new format
+
+### ⏳ Phase 6: Containerization & Deployment (Not Started)
 
 - [ ] Docker optimization
 - [ ] ECR setup
@@ -114,20 +151,20 @@
 
 ## 🎯 Next Steps
 
-1. **Immediate (Phase 4)**:
+1. **Immediate (Phase 5 - Response Format Refactoring)**:
 
-   - Design multi-tenant data model
-   - Implement tenant middleware
-   - Add S3 path prefixing for tenant isolation
-   - Update services for tenant filtering
+   - Remove wrapper pattern DTOs from `app/dtos/common.py`
+   - Refactor Service layer to return direct Pydantic Models
+   - Update Router layer to handle direct model responses
+   - Update all test assertions to match new response format
 
 2. **Short-term**:
 
-   - Complete Phase 4 implementation
-   - Update API documentation with tenant examples
-   - Create migration guide for existing data
+   - Complete Phase 5 implementation
+   - Verify all 234 tests still passing
+   - Update API documentation examples
 
-3. **Medium-term (Phase 5)**:
+3. **Medium-term (Phase 6)**:
    - Optimize Docker image
    - Set up ECS infrastructure
    - Configure CloudWatch logging
@@ -143,6 +180,16 @@
 ---
 
 ## 📝 Recent Changes
+
+**2025-12-31**:
+
+- ✅ **Adopted REST Standard Response Format**: Removed wrapper pattern requirement from all documentation
+  - Updated `TECH_RULES.md`: Replaced wrapper pattern with direct Pydantic Model + HTTP Status Codes
+  - Updated `.github/copilot-instructions.md`: Aligned Error Handling section with REST standards
+  - Updated `.cursorrules`: Synchronized response format rules
+  - **Created Phase 5**: Response Format Refactoring (23 checklist items)
+  - **Marked Phase 4 Complete**: Multi-tenant architecture fully implemented
+  - **Impact**: 2 Services, 2 Routers, 1 Common DTO, 15+ test files require refactoring
 
 **2025-12-30**:
 
