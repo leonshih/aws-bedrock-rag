@@ -41,7 +41,7 @@
 - [x] Integration tests (32 tests)
 - [x] DTO reorganization (layer-based structure)
 
-### ⏳ Phase 4: Multi-Tenant Architecture (In Progress - 75% Complete)
+### ⏳ Phase 4: Multi-Tenant Architecture (In Progress - 88% Complete)
 
 - [x] Tenant context model with UUID validation
 - [x] Tenant middleware implementation
@@ -49,7 +49,7 @@
 - [x] **Architecture Refactoring**: Separated tenant_id from DTOs (injected via middleware)
 - [x] **S3 path isolation** (`documents/{tenant_id}/`)
 - [x] **Automatic tenant filter injection in RAG queries** (Knowledge Base metadata filtering)
-- [ ] Tenant-aware API documentation
+- [x] **Tenant-aware API documentation** (OpenAPI docs with X-Tenant-ID header requirements)
 - [ ] Multi-tenant test coverage
 
 ### ⏳ Phase 5: Response Format Refactoring (In Progress - 0% Complete)
@@ -180,6 +180,20 @@
 ---
 
 ## 📝 Recent Changes
+
+**2026-01-02** (Continued):
+
+- ✅ **Completed Tenant-Aware API Documentation**: All endpoints now document multi-tenant requirements
+  - Updated [app/routers/chat/chat_router.py](app/routers/chat/chat_router.py): Added `X-Tenant-ID` header documentation
+  - Updated [app/routers/ingest/ingest_router.py](app/routers/ingest/ingest_router.py): All file operations now clearly marked as tenant-isolated
+  - Updated [app/main.py](app/main.py): Enhanced API description with multi-tenant architecture overview
+  - **OpenAPI Features**:
+    - 🔐 Multi-tenant badge in endpoint descriptions
+    - Required headers section for each endpoint
+    - Tenant isolation behavior explanations
+    - Error responses for missing/invalid tenant IDs
+  - **Phase 4 Progress**: 88% complete (7 of 8 tasks)
+  - **Test Results**: 219 unit/service/router tests passing ✅
 
 **2026-01-02**:
 

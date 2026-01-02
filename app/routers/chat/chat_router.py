@@ -31,12 +31,19 @@ def get_rag_service() -> RAGService:
     description="""
     Send a query to the RAG system and receive an AI-generated answer with citations.
     
+    **🔐 Multi-Tenant:** This endpoint requires `X-Tenant-ID` header for data isolation.
+    All queries are automatically filtered to return only documents belonging to your tenant.
+    
     **Features:**
     - Natural language queries
+    - Automatic tenant-based data isolation
     - Optional metadata filtering (equals, not_equals, greater_than, less_than, contains)
     - Configurable result count (1-100)
     - Custom model selection
     - Source citations with relevance scores
+    
+    **Required Headers:**
+    - `X-Tenant-ID`: Your tenant UUID (e.g., "550e8400-e29b-41d4-a716-446655440000")
     
     **Example Request:**
     ```json

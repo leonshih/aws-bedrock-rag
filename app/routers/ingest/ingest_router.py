@@ -33,13 +33,19 @@ def get_ingestion_service() -> IngestionService:
     description="""
     Retrieve a list of all documents in the Knowledge Base with their metadata.
     
+    **🔐 Multi-Tenant:** This endpoint requires `X-Tenant-ID` header.
+    Only documents belonging to your tenant will be listed.
+    
+    **Required Headers:**
+    - `X-Tenant-ID`: Your tenant UUID (e.g., "550e8400-e29b-41d4-a716-446655440000")
+    
     **Features:**
-    - Lists all files in the S3 bucket
+    - Lists all files for your tenant
     - Includes custom metadata for each file
     - Returns total count and total size
-    - Supports optional prefix filtering
+    - Automatic tenant-based path isolation
     
-    **Example Response:**
+    **Example Response:
     ```json
     {
         "files": [
@@ -92,13 +98,19 @@ async def list_files(
     description="""
     Upload a new document to the Knowledge Base with optional metadata.
     
+    **🔐 Multi-Tenant:** This endpoint requires `X-Tenant-ID` header.
+    Files are automatically stored in tenant-isolated S3 paths.
+    
+    **Required Headers:**
+    - `X-Tenant-ID`: Your tenant UUID (e.g., "550e8400-e29b-41d4-a716-446655440000")
+    
     **Features:**
     - Accepts any file type (PDF, TXT, DOCX, etc.)
     - Optional custom metadata (JSON format)
     - Automatically triggers Knowledge Base sync
-    - Generates S3 key with documents/ prefix
+    - Tenant-isolated storage (documents/{tenant_id}/)
     
-    **Metadata Format:**
+    **Metadata Format:
     The metadata should be a JSON string containing key-value pairs:
     ```json
     {
@@ -184,12 +196,19 @@ async def upload_file(
     description="""
     Delete a document from the Knowledge Base.
     
+    **🔐 Multi-Tenant:** This endpoint requires `X-Tenant-ID` header.
+    Only files belonging to your tenant can be deleted.
+    
+    **Required Headers:**
+    - `X-Tenant-ID`: Your tenant UUID (e.g., "550e8400-e29b-41d4-a716-446655440000")
+    
     **Features:**
     - Deletes the file from S3
     - Removes associated metadata
+    - Tenant-isolated deletion (only your tenant's files)
     - Automatically triggers Knowledge Base sync
     
-    **Example Response:**
+    **Example Response:
     ```json
     {
         "filename": "document.pdf",

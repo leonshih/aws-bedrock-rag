@@ -41,7 +41,34 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="AWS Bedrock RAG API",
-    description="API for document management and RAG-based question answering using Amazon Bedrock",
+    description="""
+    API for document management and RAG-based question answering using Amazon Bedrock.
+    
+    ## 🔐 Multi-Tenant Architecture
+    
+    This API implements **tenant-based data isolation**. All endpoints require the `X-Tenant-ID` header 
+    containing a valid UUID v4 identifier.
+    
+    **Key Features:**
+    - **Automatic Data Isolation**: Documents and queries are isolated per tenant
+    - **S3 Path Isolation**: Files stored in `documents/{tenant_id}/` 
+    - **Query Filtering**: RAG queries automatically filtered by tenant_id
+    - **UUID Validation**: Tenant IDs validated at middleware layer
+    
+    **Required Header:**
+    - `X-Tenant-ID`: Your tenant UUID (format: `550e8400-e29b-41d4-a716-446655440000`)
+    
+    **Errors:**
+    - `400 Bad Request`: Missing or invalid tenant ID
+    - `422 Unprocessable Entity`: Invalid UUID format
+    
+    ## 🚀 Getting Started
+    
+    1. Obtain your tenant UUID from your administrator
+    2. Include `X-Tenant-ID` header in all API requests
+    3. Upload documents to `/files` endpoint
+    4. Query your documents via `/chat` endpoint
+    """,
     version="0.1.0"
 )
 
