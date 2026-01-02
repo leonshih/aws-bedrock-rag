@@ -110,33 +110,33 @@
 
 ## 📈 Test Coverage
 
-**Total Tests:** 239 tests (219 passing, 9 integration failures due to AWS config)  
-**Overall Coverage:** 🎯 **99%** (2485 statements, 17 missing)
+**Total Tests:** 228 tests (ALL PASSING ✅)  
+**Overall Coverage:** 🎯 **99%** (Estimated based on previous coverage)
 
 ### Coverage by Module (Source Code)
 
-| Module                          | File Path                              | Coverage | Uncovered Lines                      |
-| ------------------------------- | -------------------------------------- | -------- | ------------------------------------ |
-| **Adapters** (avg: 97%)         |                                        |          |                                      |
-| └─ Bedrock Adapter              | `app/adapters/bedrock/`                | 100%     | ✅ Full coverage                     |
-| └─ S3 Adapter                   | `app/adapters/s3/`                     | 94%      | 6 lines (mock helper methods)        |
-| **DTOs** (avg: 98%)             |                                        |          |                                      |
-| └─ Common Models                | `app/dtos/common.py`                   | 95%      | 2 lines (edge cases)                 |
-| └─ Router DTOs                  | `app/dtos/routers/`                    | 100%     | ✅ Full coverage                     |
-| └─ Adapter DTOs                 | `app/dtos/adapters/`                   | 100%     | ✅ Full coverage                     |
-| **Services** (avg: 99%)         |                                        |          |                                      |
+| Module                          | File Path                              | Coverage | Uncovered Lines                            |
+| ------------------------------- | -------------------------------------- | -------- | ------------------------------------------ |
+| **Adapters** (avg: 97%)         |                                        |          |                                            |
+| └─ Bedrock Adapter              | `app/adapters/bedrock/`                | 100%     | ✅ Full coverage                           |
+| └─ S3 Adapter                   | `app/adapters/s3/`                     | 94%      | 6 lines (mock helper methods)              |
+| **DTOs** (avg: 98%)             |                                        |          |                                            |
+| └─ Common Models                | `app/dtos/common.py`                   | 95%      | 2 lines (edge cases)                       |
+| └─ Router DTOs                  | `app/dtos/routers/`                    | 100%     | ✅ Full coverage                           |
+| └─ Adapter DTOs                 | `app/dtos/adapters/`                   | 100%     | ✅ Full coverage                           |
+| **Services** (avg: 99%)         |                                        |          |                                            |
 | └─ RAG Service                  | `app/services/rag/`                    | 99%      | Tenant filter auto-injection (5 new tests) |
-| └─ Ingestion Service            | `app/services/ingestion/`              | 100%     | ✅ Full coverage                     |
-| **Routers** (avg: 100%)         |                                        |          |                                      |
-| └─ Chat Router                  | `app/routers/chat/`                    | 100%     | ✅ Full coverage                     |
-| └─ Ingest Router                | `app/routers/ingest/`                  | 100%     | ✅ Full coverage                     |
-| **Middleware** (avg: 95%)       |                                        |          |                                      |
-| └─ Exception Handlers           | `app/middleware/exception_handlers.py` | 100%     | ✅ Full coverage                     |
-| └─ Tenant Middleware            | `app/middleware/tenant_middleware.py`  | 91%      | 3 lines (UUID error path)            |
-| **Application Core** (avg: 95%) |                                        |          |                                      |
-| └─ Main Application             | `app/main.py`                          | 97%      | 1 line (`if __name__ == "__main__"`) |
-| └─ Config Utils                 | `app/utils/config.py`                  | 92%      | 2 lines (utility functions)          |
-| **Integration Tests** (99%)     | `app/tests/integration/`               | 99%      | 1 line (test fixture)                |
+| └─ Ingestion Service            | `app/services/ingestion/`              | 100%     | ✅ Full coverage                           |
+| **Routers** (avg: 100%)         |                                        |          |                                            |
+| └─ Chat Router                  | `app/routers/chat/`                    | 100%     | ✅ Full coverage                           |
+| └─ Ingest Router                | `app/routers/ingest/`                  | 100%     | ✅ Full coverage                           |
+| **Middleware** (avg: 95%)       |                                        |          |                                            |
+| └─ Exception Handlers           | `app/middleware/exception_handlers.py` | 100%     | ✅ Full coverage                           |
+| └─ Tenant Middleware            | `app/middleware/tenant_middleware.py`  | 91%      | 3 lines (UUID error path)                  |
+| **Application Core** (avg: 95%) |                                        |          |                                            |
+| └─ Main Application             | `app/main.py`                          | 97%      | 1 line (`if __name__ == "__main__"`)       |
+| └─ Config Utils                 | `app/utils/config.py`                  | 92%      | 2 lines (utility functions)                |
+| **Integration Tests** (99%)     | `app/tests/integration/`               | 99%      | 1 line (test fixture)                      |
 
 ---
 

@@ -1,9 +1,10 @@
 """
 Integration tests for API layer.
-Tests router → service → adapter flow with real dependencies.
+Tests router → service → adapter flow with mocked AWS dependencies.
 """
 
 import pytest
+from unittest.mock import patch, Mock
 from fastapi.testclient import TestClient
 from app.main import app
 from app.utils.config import Config
@@ -25,10 +26,20 @@ def config():
 
 
 class TestChatRouterIntegration:
-    """Test chat router with real service dependencies."""
+    """Test chat router with mocked AWS service dependencies."""
 
-    def test_chat_endpoint_exists(self, client):
+    @patch('app.adapters.bedrock.bedrock_adapter.boto3.client')
+    def test_chat_endpoint_exists(self, mock_boto_client, client):
         """Test chat endpoint is registered and accessible."""
+        # Mock Bedrock client
+        mock_client = Mock()
+        mock_client.retrieve_and_generate.return_value = {
+            'output': {'text': 'Test answer'},
+            'citations': [],
+            'sessionId': 'test-session'
+        }
+        mock_boto_client.return_value = mock_client
+        
         response = client.post(
             "/chat",
             json={"query": "test"},
@@ -37,8 +48,18 @@ class TestChatRouterIntegration:
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
 
-    def test_chat_endpoint_with_valid_request(self, client):
+    @patch('app.adapters.bedrock.bedrock_adapter.boto3.client')
+    def test_chat_endpoint_with_valid_request(self, mock_boto_client, client):
         """Test chat endpoint accepts valid request format."""
+        # Mock Bedrock client
+        mock_client = Mock()
+        mock_client.retrieve_and_generate.return_value = {
+            'output': {'text': 'AWS Bedrock is a managed AI service.'},
+            'citations': [],
+            'sessionId': 'test-session'
+        }
+        mock_boto_client.return_value = mock_client
+        
         response = client.post(
             "/chat",
             json={
@@ -47,16 +68,15 @@ class TestChatRouterIntegration:
             },
             headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
-        # Should return 200 (mock mode) or valid response
-        assert response.status_code in [200, 500]  # 500 if AWS not configured
+        # Should return 200 with mocked response
+        assert response.status_code == 200
         
-        if response.status_code == 200:
-            data = response.json()
-            assert "success" in data
-            assert data["success"] is True
-            assert "data" in data
-            assert "answer" in data["data"]
-            assert "citations" in data["data"]
+        data = response.json()
+        assert "success" in data
+        assert data["success"] is True
+        assert "data" in data
+        assert "answer" in data["data"]
+        assert "citations" in data["data"]
 
     def test_chat_endpoint_validation_error(self, client):
         """Test chat endpoint returns 422 for invalid request."""
@@ -68,8 +88,18 @@ class TestChatRouterIntegration:
         assert response.status_code == 422
         assert "error" in response.json()
 
-    def test_chat_endpoint_with_metadata_filter(self, client):
+    @patch('app.adapters.bedrock.bedrock_adapter.boto3.client')
+    def test_chat_endpoint_with_metadata_filter(self, mock_boto_client, client):
         """Test chat endpoint accepts metadata filters."""
+        # Mock Bedrock client
+        mock_client = Mock()
+        mock_client.retrieve_and_generate.return_value = {
+            'output': {'text': 'Filtered answer'},
+            'citations': [],
+            'sessionId': 'test-session'
+        }
+        mock_boto_client.return_value = mock_client
+        
         response = client.post(
             "/chat",
             json={
@@ -83,8 +113,18 @@ class TestChatRouterIntegration:
         # Should not fail validation
         assert response.status_code != 422
 
-    def test_chat_endpoint_service_initialization(self, client):
+    @patch('app.adapters.bedrock.bedrock_adapter.boto3.client')
+    def test_chat_endpoint_service_initialization(self, mock_boto_client, client):
         """Test chat endpoint properly initializes RAG service."""
+        # Mock Bedrock client
+        mock_client = Mock()
+        mock_client.retrieve_and_generate.return_value = {
+            'output': {'text': 'Test answer'},
+            'citations': [],
+            'sessionId': 'test-session'
+        }
+        mock_boto_client.return_value = mock_client
+        
         # This test ensures the dependency injection works
         response = client.post(
             "/chat",
@@ -92,12 +132,12 @@ class TestChatRouterIntegration:
             headers={"X-Tenant-ID": TEST_TENANT_ID}
         )
         
-        # In mock mode (always enabled in tests), should work fine
+        # Should work fine with mocked AWS
         assert response.status_code == 200
 
 
 class TestIngestRouterIntegration:
-    """Test ingest router with real service dependencies."""
+    """Test ingest router with mocked AWS service dependencies."""
 
     def test_list_files_endpoint_exists(self, client):
         """Test list files endpoint is registered and accessible."""
@@ -105,8 +145,17 @@ class TestIngestRouterIntegration:
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
 
-    def test_list_files_with_real_service(self, client):
+    @patch('app.adapters.s3.s3_adapter.boto3.client')
+    def test_list_files_with_real_service(self, mock_boto_client, client):
         """Test list files endpoint with service initialization."""
+        # Mock S3 client
+        mock_client = Mock()
+        mock_client.list_objects_v2.return_value = {
+            'Contents': [],
+            'IsTruncated': False
+        }
+        mock_boto_client.return_value = mock_client
+        
         response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
         
         # Should return successful response with file list
@@ -156,11 +205,17 @@ class TestIngestRouterIntegration:
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
 
-    def test_delete_file_with_real_service(self, client):
+    @patch('app.adapters.s3.s3_adapter.boto3.client')
+    def test_delete_file_with_real_service(self, mock_boto_client, client):
         """Test delete endpoint with service initialization."""
+        # Mock S3 client
+        mock_client = Mock()
+        mock_client.delete_object.return_value = {}
+        mock_boto_client.return_value = mock_client
+        
         response = client.delete("/files/nonexistent.txt", headers={"X-Tenant-ID": TEST_TENANT_ID})
         
-        # In mock mode, should handle gracefully (200 success)
+        # Should handle gracefully with mocked AWS
         assert response.status_code == 200
 
 
@@ -208,8 +263,18 @@ class TestAPIExceptionHandling:
 class TestAPIDependencyInjection:
     """Test dependency injection works correctly in API layer."""
 
-    def test_chat_router_dependency_injection(self, client):
+    @patch('app.adapters.bedrock.bedrock_adapter.boto3.client')
+    def test_chat_router_dependency_injection(self, mock_boto_client, client):
         """Test chat router properly injects RAG service."""
+        # Mock Bedrock client
+        mock_client = Mock()
+        mock_client.retrieve_and_generate.return_value = {
+            'output': {'text': 'Test answer'},
+            'citations': [],
+            'sessionId': 'test-session'
+        }
+        mock_boto_client.return_value = mock_client
+        
         # This would fail if dependency injection is broken
         response = client.post(
             "/chat",
@@ -221,8 +286,17 @@ class TestAPIDependencyInjection:
         assert response.status_code == 200
         assert "TypeError" not in response.text
 
-    def test_ingest_router_dependency_injection(self, client):
+    @patch('app.adapters.s3.s3_adapter.boto3.client')
+    def test_ingest_router_dependency_injection(self, mock_boto_client, client):
         """Test ingest router properly injects Ingestion service."""
+        # Mock S3 client
+        mock_client = Mock()
+        mock_client.list_objects_v2.return_value = {
+            'Contents': [],
+            'IsTruncated': False
+        }
+        mock_boto_client.return_value = mock_client
+        
         # This would fail if dependency injection is broken
         response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
         
@@ -230,14 +304,24 @@ class TestAPIDependencyInjection:
         assert response.status_code == 200
         assert "TypeError" not in response.text
 
-    def test_multiple_requests_use_different_service_instances(self, client):
+    @patch('app.adapters.bedrock.bedrock_adapter.boto3.client')
+    def test_multiple_requests_use_different_service_instances(self, mock_boto_client, client):
         """Test each request gets fresh service instance."""
+        # Mock Bedrock client
+        mock_client = Mock()
+        mock_client.retrieve_and_generate.return_value = {
+            'output': {'text': 'Test answer'},
+            'citations': [],
+            'sessionId': 'test-session'
+        }
+        mock_boto_client.return_value = mock_client
+        
         response1 = client.post("/chat", json={"query": "test1"}, headers={"X-Tenant-ID": TEST_TENANT_ID})
         response2 = client.post("/chat", json={"query": "test2"}, headers={"X-Tenant-ID": TEST_TENANT_ID})
         
-        # Both should work independently
-        assert response1.status_code in [200, 500]
-        assert response2.status_code in [200, 500]
+        # Both should work with mocked AWS
+        assert response1.status_code == 200
+        assert response2.status_code == 200
 
 
 class TestAPIHealthCheck:
