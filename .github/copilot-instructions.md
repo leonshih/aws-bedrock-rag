@@ -62,13 +62,23 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 ## Step 5: Finalization (Commit)
 
 - **MANDATORY:** After user approves the code and docs, you MUST execute the Git commit immediately.
-- **DO NOT skip this step** - always commit before moving to the next task.
 - **Format:** `feat/fix/docs/refactor: <clear description>`
 - **Example:**
   ```bash
   git add -A && git commit -m "feat: implement tenant id validation middleware"
   ```
 - **Important:** Use `git add -A` to ensure all changes (including new files) are staged.
+
+## Step 6: Regression Check & Cleanup (Post-Commit)
+
+- **Action:** Now that the main task is secured in a commit, check for side effects.
+- **Global Validation:**
+  1.  Run the full test suite: `make test`
+  2.  **If ALL Pass:** The workflow is complete. Wait for the next task.
+  3.  **If Unrelated Tests Fail:**
+      - **Fix:** Analyze and fix the broken tests or logic errors.
+      - **Commit:** Create a **NEW, SEPARATE** commit for these fixes.
+        - Format: `fix: resolve regression in <module> caused by recent changes`
 
 ---
 

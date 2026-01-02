@@ -22,6 +22,12 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 
 ## Step 1: Atomic Selection
 
+- **FIRST ACTION:** Check if there are uncommitted changes from the previous task:
+  ```bash
+  git status
+  ```
+  - If uncommitted changes exist → **STOP and commit them first** using Step 5
+  - If working tree is clean → Proceed to task selection
 - Read `@PROJECT_STATUS.md`.
 - **Constraint:** Select **ONLY the single next uncompleted checklist item (`[ ]`)** from the current phase.
 - Briefly state: _"I will focus solely on the task: [Task Name]"_.
@@ -37,22 +43,42 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 
 - Generate code following the **Coding Standards** (see below).
 - Create/Update co-located unit tests (test\_\*.py) immediately matching the implementation.
-- MANDATORY ACTION: Run the specific tests you created and verify they pass before proceeding.
+- MANDATORY ACTION: Run tests using `make test` command (DO NOT use raw pytest or python commands).
 - **Crucial:** Stop immediately after completing the agreed task. Do NOT proceed to the next checklist item automatically.
 
 ## Step 4: Documentation Update (Definition of Done)
 
 - **AUTOMATIC ACTION:** After coding, you MUST update the documentation:
   1.  **`PROJECT_STATUS.md`**: Mark **only** the completed task as `[x]`.
-  2.  **`ARCHITECTURE.md`**: Update if you changed API contracts, DB schema, or layer logic.
-  3.  **`docs/GLOSSARY.md`**: Add new terms if introduced.
+  2.  **Test Coverage**: Update coverage statistics by running:
+      ```bash
+      PYTHONPATH=. .venv/bin/pytest app/ --cov=app --cov-report=term-missing --cov-report=json:coverage.json -q
+      ```
+      Then update the coverage table in `PROJECT_STATUS.md` with new percentages for affected components.
+  3.  **`ARCHITECTURE.md`**: Update if you changed API contracts, DB schema, or layer logic.
+  4.  **`docs/GLOSSARY.md`**: Add new terms if introduced.
 - **Review:** Present the code changes AND documentation updates together.
 
 ## Step 5: Finalization (Commit)
 
-- Once the user approves the code and docs, generate a Git commit command.
+- **MANDATORY:** After user approves the code and docs, you MUST execute the Git commit immediately.
 - **Format:** `feat/fix/docs/refactor: <clear description>`
-- **Example:** `git commit -am "feat: implement tenant id validation middleware"`
+- **Example:**
+  ```bash
+  git add -A && git commit -m "feat: implement tenant id validation middleware"
+  ```
+- **Important:** Use `git add -A` to ensure all changes (including new files) are staged.
+
+## Step 6: Regression Check & Cleanup (Post-Commit)
+
+- **Action:** Now that the main task is secured in a commit, check for side effects.
+- **Global Validation:**
+  1.  Run the full test suite: `make test`
+  2.  **If ALL Pass:** The workflow is complete. Wait for the next task.
+  3.  **If Unrelated Tests Fail:**
+      - **Fix:** Analyze and fix the broken tests or logic errors.
+      - **Commit:** Create a **NEW, SEPARATE** commit for these fixes.
+        - Format: `fix: resolve regression in <module> caused by recent changes`
 
 ---
 
@@ -74,6 +100,28 @@ _Refer to `@docs/TECH_RULES.md` for full details, but strictly enforce these:_
 5.  **Dependency Injection:**
     - Always use `Depends()` for services in routers.
     - Never instantiate Services/Adapters manually inside business logic.
+6.  **Multi-Tenant Architecture (CRITICAL):**
+
+    - **tenant_id is NEVER part of request DTOs** (e.g., ChatRequest, FileUploadRequest)
+    - **Flow:** `X-Tenant-ID` header → TenantMiddleware → `request.state.tenant_context`
+    - **Router Layer:** Extract tenant_id using `get_tenant_context(request)`, pass as **independent parameter** to Service
+    - **Service Layer:** Accept `tenant_id: UUID` as separate parameter (NOT in DTO)
+    - **Example Pattern:**
+
+      ```python
+      # ✅ CORRECT - Router
+      async def endpoint(request: Request, dto: ChatRequest):
+          tenant_context = get_tenant_context(request)
+          service.method(dto, tenant_id=tenant_context.tenant_id)
+
+      # ✅ CORRECT - Service
+      def method(self, dto: ChatRequest, tenant_id: UUID):
+          logger.info(f"Processing for tenant {tenant_id}")
+
+      # ❌ WRONG - Do NOT include tenant_id in DTO
+      class ChatRequest(BaseModel):
+          tenant_id: UUID  # NEVER DO THIS
+      ```
 
 ---
 
