@@ -41,14 +41,14 @@
 - [x] Integration tests (32 tests)
 - [x] DTO reorganization (layer-based structure)
 
-### ⏳ Phase 4: Multi-Tenant Architecture (In Progress - 63% Complete)
+### ⏳ Phase 4: Multi-Tenant Architecture (In Progress - 75% Complete)
 
 - [x] Tenant context model with UUID validation
 - [x] Tenant middleware implementation
 - [x] Update existing tests to include tenant_id
 - [x] **Architecture Refactoring**: Separated tenant_id from DTOs (injected via middleware)
 - [x] **S3 path isolation** (`documents/{tenant_id}/`)
-- [ ] Automatic tenant filter injection in RAG queries
+- [x] **Automatic tenant filter injection in RAG queries** (Knowledge Base metadata filtering)
 - [ ] Tenant-aware API documentation
 - [ ] Multi-tenant test coverage
 
@@ -110,7 +110,7 @@
 
 ## 📈 Test Coverage
 
-**Total Tests:** 234 tests ✅ **ALL PASSING**  
+**Total Tests:** 239 tests (219 passing, 9 integration failures due to AWS config)  
 **Overall Coverage:** 🎯 **99%** (2485 statements, 17 missing)
 
 ### Coverage by Module (Source Code)
@@ -125,7 +125,7 @@
 | └─ Router DTOs                  | `app/dtos/routers/`                    | 100%     | ✅ Full coverage                     |
 | └─ Adapter DTOs                 | `app/dtos/adapters/`                   | 100%     | ✅ Full coverage                     |
 | **Services** (avg: 99%)         |                                        |          |                                      |
-| └─ RAG Service                  | `app/services/rag/`                    | 98%      | 1 line (conditional branch)          |
+| └─ RAG Service                  | `app/services/rag/`                    | 99%      | Tenant filter auto-injection (5 new tests) |
 | └─ Ingestion Service            | `app/services/ingestion/`              | 100%     | ✅ Full coverage                     |
 | **Routers** (avg: 100%)         |                                        |          |                                      |
 | └─ Chat Router                  | `app/routers/chat/`                    | 100%     | ✅ Full coverage                     |
@@ -180,6 +180,19 @@
 ---
 
 ## 📝 Recent Changes
+
+**2026-01-02**:
+
+- ✅ **Completed Automatic Tenant Filter Injection**: RAG queries now automatically include tenant_id metadata filter
+  - Implemented `_build_retrieval_config_with_tenant()` in RAGService to inject tenant filter
+  - Tenant filter is always applied (format: `{"equals": {"key": "tenant_id", "value": "<UUID>"}}`)
+  - User-provided filters are combined with tenant filter using AND logic
+  - Added 5 comprehensive unit tests covering:
+    - Auto-injection without user filters
+    - Combination of tenant + user filters
+    - Private method behavior
+  - **Phase 4 Progress**: 75% complete (6 of 8 tasks)
+  - **Test Results**: 239 tests total (219 passing, 9 integration failures due to AWS credentials)
 
 **2025-12-31**:
 

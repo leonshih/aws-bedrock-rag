@@ -49,10 +49,11 @@ class RAGService:
         # For direct models: anthropic.claude-3-opus-20240229-v1:0
         model_id = request.model_id or self.config.BEDROCK_MODEL_ID
         
-        # Convert metadata filters to Bedrock format
-        retrieval_config = None
-        if request.metadata_filters:
-            retrieval_config = self._build_retrieval_config(request.metadata_filters)
+        # Build retrieval configuration with automatic tenant filter injection
+        retrieval_config = self._build_retrieval_config_with_tenant(
+            tenant_id=tenant_id,
+            user_filters=request.metadata_filters
+        )
         
         # Call Bedrock adapter
         bedrock_response = self.bedrock_adapter.retrieve_and_generate(
@@ -85,6 +86,36 @@ class RAGService:
                 model_used=model_id
             )
         }
+    
+    def _build_retrieval_config_with_tenant(
+        self,
+        tenant_id: UUID,
+        user_filters: Optional[List[MetadataFilter]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Build retrieval configuration with automatic tenant_id filter injection.
+        
+        Args:
+            tenant_id: Tenant identifier for automatic data isolation
+            user_filters: Optional user-provided metadata filters
+            
+        Returns:
+            Bedrock-compatible retrieval configuration with tenant filter
+        """
+        # Create tenant filter (always injected for data isolation)
+        tenant_filter = MetadataFilter(
+            key="tenant_id",
+            value=str(tenant_id),
+            operator="equals"
+        )
+        
+        # Combine tenant filter with user filters
+        all_filters = [tenant_filter]
+        if user_filters:
+            all_filters.extend(user_filters)
+        
+        # Build retrieval config using existing method
+        return self._build_retrieval_config(all_filters)
     
     def _build_retrieval_config(
         self,

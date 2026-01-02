@@ -248,3 +248,125 @@ class TestRAGService:
         call_kwargs = mock_adapter.retrieve_and_generate.call_args[1]
         assert call_kwargs["retrieval_config"] is not None
         assert "vectorSearchConfiguration" in call_kwargs["retrieval_config"]
+    
+    @patch('app.services.rag.rag_service.BedrockAdapter')
+    def test_query_auto_injects_tenant_filter(self, mock_bedrock_adapter_class, mock_config):
+        """Test that tenant_id is automatically injected as a filter in all queries."""
+        from app.dtos.adapters.bedrock import BedrockRAGResult
+        
+        mock_adapter = Mock()
+        mock_adapter.retrieve_and_generate.return_value = {
+            "success": True,
+            "data": BedrockRAGResult(
+                answer="Tenant-filtered answer.",
+                session_id="session-tenant-1",
+                references=[]
+            )
+        }
+        mock_bedrock_adapter_class.return_value = mock_adapter
+        
+        service = RAGService(config=mock_config)
+        request = ChatRequest(query="Test query without filters")
+        response = service.query(request, tenant_id=TEST_TENANT_ID)
+        
+        # Verify response
+        assert response["success"] is True
+        
+        # Verify tenant filter was injected
+        call_kwargs = mock_adapter.retrieve_and_generate.call_args[1]
+        retrieval_config = call_kwargs["retrieval_config"]
+        assert retrieval_config is not None
+        assert "vectorSearchConfiguration" in retrieval_config
+        
+        # Extract filter and verify tenant_id
+        filter_expr = retrieval_config["vectorSearchConfiguration"]["filter"]
+        assert "equals" in filter_expr
+        assert filter_expr["equals"]["key"] == "tenant_id"
+        assert filter_expr["equals"]["value"] == TEST_TENANT_ID
+    
+    @patch('app.services.rag.rag_service.BedrockAdapter')
+    def test_query_combines_tenant_and_user_filters(self, mock_bedrock_adapter_class, mock_config):
+        """Test that tenant filter is combined with user-provided filters using AND logic."""
+        from app.dtos.adapters.bedrock import BedrockRAGResult
+        
+        mock_adapter = Mock()
+        mock_adapter.retrieve_and_generate.return_value = {
+            "success": True,
+            "data": BedrockRAGResult(
+                answer="Multi-filtered answer.",
+                session_id="session-multi-1",
+                references=[]
+            )
+        }
+        mock_bedrock_adapter_class.return_value = mock_adapter
+        
+        service = RAGService(config=mock_config)
+        request = ChatRequest(
+            query="Recent medical studies",
+            metadata_filters=[
+                MetadataFilter(key="category", value="medical", operator="equals"),
+                MetadataFilter(key="year", value=2020, operator="greater_than")
+            ]
+        )
+        response = service.query(request, tenant_id=TEST_TENANT_ID)
+        
+        # Verify response
+        assert response["success"] is True
+        
+        # Verify filters are combined with AND logic
+        call_kwargs = mock_adapter.retrieve_and_generate.call_args[1]
+        retrieval_config = call_kwargs["retrieval_config"]
+        filter_expr = retrieval_config["vectorSearchConfiguration"]["filter"]
+        
+        # Should have andAll with 3 filters: tenant_id + category + year
+        assert "andAll" in filter_expr
+        assert len(filter_expr["andAll"]) == 3
+        
+        # Verify tenant filter is included
+        filters = filter_expr["andAll"]
+        tenant_filters = [f for f in filters if "equals" in f and f["equals"]["key"] == "tenant_id"]
+        assert len(tenant_filters) == 1
+        assert tenant_filters[0]["equals"]["value"] == TEST_TENANT_ID
+    
+    def test_build_retrieval_config_with_tenant_only_tenant_filter(self, rag_service):
+        """Test building retrieval config with only tenant filter."""
+        from uuid import UUID
+        
+        tenant_id = UUID(TEST_TENANT_ID)
+        config = rag_service._build_retrieval_config_with_tenant(
+            tenant_id=tenant_id,
+            user_filters=None
+        )
+        
+        assert "vectorSearchConfiguration" in config
+        filter_expr = config["vectorSearchConfiguration"]["filter"]
+        assert "equals" in filter_expr
+        assert filter_expr["equals"]["key"] == "tenant_id"
+        assert filter_expr["equals"]["value"] == TEST_TENANT_ID
+    
+    def test_build_retrieval_config_with_tenant_and_user_filters(self, rag_service):
+        """Test building retrieval config with tenant and user filters combined."""
+        from uuid import UUID
+        
+        tenant_id = UUID(TEST_TENANT_ID)
+        user_filters = [
+            MetadataFilter(key="category", value="medical", operator="equals")
+        ]
+        
+        config = rag_service._build_retrieval_config_with_tenant(
+            tenant_id=tenant_id,
+            user_filters=user_filters
+        )
+        
+        filter_expr = config["vectorSearchConfiguration"]["filter"]
+        assert "andAll" in filter_expr
+        assert len(filter_expr["andAll"]) == 2
+        
+        # Verify both filters are present
+        filters = filter_expr["andAll"]
+        tenant_filter = next(f for f in filters if "equals" in f and f["equals"]["key"] == "tenant_id")
+        category_filter = next(f for f in filters if "equals" in f and f["equals"]["key"] == "category")
+        
+        assert tenant_filter["equals"]["value"] == TEST_TENANT_ID
+        assert category_filter["equals"]["value"] == "medical"
+

@@ -145,21 +145,34 @@ context = TenantContext(tenant_id="550e8400-e29b-41d4-a716-446655440000")
 - `TenantMissingError`: Raised when `X-Tenant-ID` header is missing
 - `TenantValidationError`: Raised when UUID format is invalid
 
-### Tenant Isolation Strategy (Planned)
+### Tenant Isolation Strategy
 
-**Current Status:** ✅ Model implemented, ⏳ Middleware pending
+**Current Status:** ✅ Model, Middleware, S3 Isolation, RAG Filter implemented
 
 **Implementation Layers:**
 
-1. **Middleware Layer** (⏳): Extract and validate `X-Tenant-ID` from HTTP headers
-2. **Storage Layer** (⏳): Enforce S3 path prefix `documents/{tenant_id}/`
-3. **Retrieval Layer** (⏳): Auto-inject tenant filter in Bedrock queries
+1. **Middleware Layer** (✅): Extract and validate `X-Tenant-ID` from HTTP headers
+2. **Storage Layer** (✅): Enforce S3 path prefix `documents/{tenant_id}/`
+3. **Retrieval Layer** (✅): Auto-inject tenant filter in Bedrock Knowledge Base queries
 4. **Validation Layer** (✅): UUID format enforcement via Pydantic
 
-**Example Flow (Planned):**
+**Implemented Flow:**
 
 ```
-Client Request → Middleware (extract tenant_id) → Router → Service (inject tenant filter) → Adapter (prefix S3 path)
+Client Request → TenantMiddleware (extract & validate tenant_id) → Router (get tenant from request.state) → Service (auto-inject tenant filter) → Adapter (apply S3 prefix)
+```
+
+**Tenant Filter Details:**
+
+```python
+# Automatic tenant filter injection in RAGService
+filter = {
+    "equals": {
+        "key": "tenant_id",
+        "value": str(tenant_id)
+    }
+}
+# Combined with user filters using AND logic
 ```
 
 ---
@@ -391,10 +404,10 @@ Query
 - ✅ **Tenant Context Model:** UUID v4 validated data model ([`TenantContext`](app/dtos/common.py))
 - ✅ **UUID Validation:** Pydantic-based format validation (accepts with/without hyphens)
 - ✅ **Exception Types:** `TenantMissingError`, `TenantValidationError`
-- ⏳ **Tenant ID Validation:** UUID v4 format validation for `X-Tenant-ID` header
-- ⏳ **Mandatory Tenant Header:** Reject requests without valid tenant ID
-- ⏳ **Path Isolation:** Enforce `documents/{tenant_id}/` prefix in S3 operations
-- ⏳ **Immutable Filters:** Inject tenant filter into all Bedrock queries at service layer
+- ✅ **Tenant ID Validation:** UUID v4 format validation for `X-Tenant-ID` header via middleware
+- ✅ **Mandatory Tenant Header:** Reject requests without valid tenant ID
+- ✅ **Path Isolation:** Enforce `documents/{tenant_id}/` prefix in S3 operations
+- ✅ **Immutable Filters:** Auto-inject tenant filter into all RAG queries at service layer
 - ⏳ **Ownership Validation:** Verify tenant owns file before delete/download operations
 
 ---
