@@ -84,6 +84,28 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
       - **Commit:** Create a **NEW, SEPARATE** commit for these fixes.
         - Format: `fix: resolve regression in <module> caused by recent changes`
 
+## Step 7: Refactoring Scout (Tech Debt Assessment)
+
+- **Trigger:** Execute this step ONLY after Step 6 is successfully completed.
+- **Action:** Review the code touched in this session (and related files) for "Code Smells" or architectural improvements.
+- **Criteria for Flagging:**
+  - **Complexity:** Functions > 20 lines, nested loops, or high cyclomatic complexity.
+  - **Duplication:** Similar logic repeated in Services/Adapters.
+  - **Performance:** N+1 queries, inefficient loops, or blocking I/O.
+  - **Architecture:** Violations of Layer Separation or Dependency Injection rules.
+  - **Typing:** Missing or Loose type hints (e.g., usage of `Any`).
+- **Output Rule:**
+  - **If NO issues found:** End the interaction politely.
+  - **If issues found:** DO NOT fix them now. Instead, generate a **"Refactoring Proposal"** block:
+    1.  **Severity:** [Critical / Moderate / Minor]
+    2.  **Problem:** Brief description of the issue.
+    3.  **Solution:** Proposed fix.
+    4.  **Task Creation:** Provide a markdown checklist item formatted for `PROJECT_STATUS.md`.
+    - _Example Output:_
+      > 💡 **Refactoring Opportunity Detected** > **Problem:** `UserService.get_users` has embedded SQL logic (Leaky Abstraction).
+      > **Proposed Solution:** Move SQL logic to `UserAdapter`.
+      > **Next Step:** Should I add `[ ] Refactor: Move SQL from UserService to UserAdapter` to Phase 3 in `PROJECT_STATUS.md`?
+
 ---
 
 # 📏 Critical Coding Standards (Summary)

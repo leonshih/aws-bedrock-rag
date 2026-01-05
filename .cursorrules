@@ -29,8 +29,12 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
   - If uncommitted changes exist → **STOP and commit them first** using Step 5
   - If working tree is clean → Proceed to task selection
 - Read `@PROJECT_STATUS.md`.
-- **Constraint:** Select **ONLY the single next uncompleted checklist item (`[ ]`)** from the current phase.
-- Briefly state: _"I will focus solely on the task: [Task Name]"_.
+- **Phase Completion Rule (CRITICAL):**
+  - **ALWAYS scan ALL Phases** (starting from Phase 0) to find the **first Phase** that has uncompleted items (`[ ]`)
+  - **Do NOT skip to the next Phase** if the current Phase still has uncompleted tasks
+  - Example: If Phase 4 shows "88% Complete" with 1 uncompleted item, you MUST complete Phase 4 first before moving to Phase 5
+- **Task Selection:** Select **ONLY the single next uncompleted checklist item (`[ ]`)** from the earliest incomplete Phase.
+- Briefly state: _"I will focus solely on the task: [Phase X - Task Name]"_.
 
 ## Step 2: Planning & Discussion
 
@@ -44,7 +48,24 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 - Generate code following the **Coding Standards** (see below).
 - Create/Update co-located unit tests (test\_\*.py) immediately matching the implementation.
 - MANDATORY ACTION: Run tests using `make test` command (DO NOT use raw pytest or python commands).
-- **Crucial:** Stop immediately after completing the agreed task. Do NOT proceed to the next checklist item automatically.
+- **Crucial:** After coding, do NOT go to Step 4 yet. **Execute Step 3.5 immediately.**
+
+## Step 3.5: Code Quality & Security Audit (Self-Correction)
+
+- **IMMEDIATE ACTION:** Before updating documentation, strictly review the code you just generated against these criteria:
+
+  1.  **Security:** Are there SQL Injections? Exposed Secrets? Unvalidated Inputs? (OWASP Top 10 check).
+  2.  **Logic:** Are there infinite loops? Race conditions? Unhandled edge cases?
+  3.  **Redundancy:** Are there unused imports? Dead code? Redundant logic that can be simplified?
+  4.  **Privacy:** Are we accidentally logging PII (Personally Identifiable Information)?
+
+- **Decision Gate:**
+  - ✅ **PASS:** If the code is clean, secure, and optimal → Proceed immediately to **Step 4**.
+  - ❌ **FAIL:** If _ANY_ issue is found:
+    1.  **Stop:** Do NOT proceed to Step 4.
+    2.  **Report:** Explicitly state: _"I detected a potential issue: [Description of Issue]."_
+    3.  **Loop Back:** Return to **Step 2 (Planning)** to propose a fix for this specific issue.
+    4.  **Wait:** Ask for user approval on the fix plan.
 
 ## Step 4: Documentation Update (Definition of Done)
 
@@ -79,6 +100,28 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
       - **Fix:** Analyze and fix the broken tests or logic errors.
       - **Commit:** Create a **NEW, SEPARATE** commit for these fixes.
         - Format: `fix: resolve regression in <module> caused by recent changes`
+
+## Step 7: Refactoring Scout (Tech Debt Assessment)
+
+- **Trigger:** Execute this step ONLY after Step 6 is successfully completed.
+- **Action:** Review the code touched in this session (and related files) for "Code Smells" or architectural improvements.
+- **Criteria for Flagging:**
+  - **Complexity:** Functions > 20 lines, nested loops, or high cyclomatic complexity.
+  - **Duplication:** Similar logic repeated in Services/Adapters.
+  - **Performance:** N+1 queries, inefficient loops, or blocking I/O.
+  - **Architecture:** Violations of Layer Separation or Dependency Injection rules.
+  - **Typing:** Missing or Loose type hints (e.g., usage of `Any`).
+- **Output Rule:**
+  - **If NO issues found:** End the interaction politely.
+  - **If issues found:** DO NOT fix them now. Instead, generate a **"Refactoring Proposal"** block:
+    1.  **Severity:** [Critical / Moderate / Minor]
+    2.  **Problem:** Brief description of the issue.
+    3.  **Solution:** Proposed fix.
+    4.  **Task Creation:** Provide a markdown checklist item formatted for `PROJECT_STATUS.md`.
+    - _Example Output:_
+      > 💡 **Refactoring Opportunity Detected** > **Problem:** `UserService.get_users` has embedded SQL logic (Leaky Abstraction).
+      > **Proposed Solution:** Move SQL logic to `UserAdapter`.
+      > **Next Step:** Should I add `[ ] Refactor: Move SQL from UserService to UserAdapter` to Phase 3 in `PROJECT_STATUS.md`?
 
 ---
 
