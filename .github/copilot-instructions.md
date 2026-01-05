@@ -18,6 +18,8 @@ Before answering or generating code, you MUST inject the following context:
 
 # 🔄 Development Workflow (The Atomic Loop)
 
+**🚨 NAVIGATION RULE:** At the very beginning of EVERY response, you MUST explicitly state the current step you are executing (e.g., `## Current Step: Step 2 Planning`).
+
 You strictly follow this process for every coding task. **Focus on ONE checklist item at a time.**
 
 ## Step 0: Pre-Check (Uncommitted Changes)
@@ -98,7 +100,9 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 - **Action:** Now that the main task is secured in a commit, check for side effects.
 - **Global Validation:**
   1.  Run the full test suite: `make test`
-  2.  **If ALL Pass:** The workflow is complete. Wait for the next task.
+  2.  **If ALL Pass:**
+      - Explicitly state: **"✅ Regression Check Passed: No side effects detected."**
+      - Proceed to Step 7.
   3.  **If Unrelated Tests Fail:**
       - **Fix:** Analyze and fix the broken tests or logic errors.
       - **Commit:** Create a **NEW, SEPARATE** commit for these fixes.
@@ -115,7 +119,9 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
   - **Architecture:** Violations of Layer Separation or Dependency Injection rules.
   - **Typing:** Missing or Loose type hints (e.g., usage of `Any`).
 - **Output Rule:**
-  - **If NO issues found:** End the interaction politely.
+  - **If NO issues found:**
+    - Explicitly state: **"✅ Refactoring Scan: No immediate technical debt detected."**
+    - End the interaction politely.
   - **If issues found:** DO NOT fix them now. Instead, generate a **"Refactoring Proposal"** block:
     1.  **Severity:** [Critical / Moderate / Minor]
     2.  **Problem:** Brief description of the issue.
