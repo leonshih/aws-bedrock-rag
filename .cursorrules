@@ -95,22 +95,9 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
   ```
 - **Important:** Use `git add -A` to ensure all changes (including new files) are staged.
 
-## Step 6: Regression Check & Cleanup (Post-Commit)
+## Step 6: Refactoring Scout (Tech Debt Assessment)
 
-- **Action:** Now that the main task is secured in a commit, check for side effects.
-- **Global Validation:**
-  1.  Run the full test suite: `make test`
-  2.  **If ALL Pass:**
-      - Explicitly state: **"✅ Regression Check Passed: No side effects detected."**
-      - Proceed to Step 7.
-  3.  **If Unrelated Tests Fail:**
-      - **Fix:** Analyze and fix the broken tests or logic errors.
-      - **Commit:** Create a **NEW, SEPARATE** commit for these fixes.
-        - Format: `fix: resolve regression in <module> caused by recent changes`
-
-## Step 7: Refactoring Scout (Tech Debt Assessment)
-
-- **Trigger:** Execute this step ONLY after Step 6 is successfully completed.
+- **Trigger:** Execute this step ONLY after Step 5 is successfully completed.
 - **Action:** Review the code touched in this session (and related files) for "Code Smells" or architectural improvements.
 - **Criteria for Flagging:**
   - **Complexity:** Functions > 20 lines, nested loops, or high cyclomatic complexity.
