@@ -52,9 +52,9 @@ This project implements a **Retrieval-Augmented Generation (RAG)** system using 
    └── Returns BedrockRAGResult
 
 5. Response Flow
-   ├── Service wraps result in SuccessResponse
-   ├── Router serializes to JSON
-   └── Client receives {success: true, data: {...}}
+   ├── Service returns ChatResponse (Pydantic model)
+   ├── Router adds HTTP 200 status code
+   └── Client receives ChatResponse JSON directly
 ```
 
 ### Document Ingestion Flow
@@ -84,7 +84,9 @@ This project implements a **Retrieval-Augmented Generation (RAG)** system using 
    └── Returns job status
 
 6. Response Flow
-   └── Client receives {success: true, data: {filename, size, s3_key}}
+   ├── Service returns FileUploadResponse (Pydantic model)
+   ├── Router adds HTTP 201 status code (resource created)
+   └── Client receives FileUploadResponse JSON directly
 ```
 
 ---
@@ -97,12 +99,11 @@ DTOs are organized by **architectural layer**, not by domain:
 
 ```
 app/dtos/
-├── common.py              # Base response wrappers + Tenant context
+├── common.py              # Shared DTOs (Tenant context, Error models)
 │   ├── TenantContext      # Multi-tenant context model (UUID validation)
 │   ├── TenantMissingError
 │   ├── TenantValidationError
-│   ├── SuccessResponse[T]
-│   └── ErrorResponse
+│   └── ErrorDetail        # Error response schema
 │
 ├── routers/               # API request/response models
 │   ├── chat.py           # ChatRequest, ChatResponse, Citation

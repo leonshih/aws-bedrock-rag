@@ -36,7 +36,7 @@ aws-bedrock-rag/
 ├── app/                        # FastAPI Application
 │   ├── adapters/              # External system integrations (AWS Bedrock, S3)
 │   ├── dtos/                  # Data Transfer Objects (Layer-based organization)
-│   │   ├── common.py         # Shared response wrappers (SuccessResponse, ErrorResponse)
+│   │   ├── common.py         # Shared DTOs (Tenant context, Error models)
 │   │   ├── routers/          # Router layer DTOs
 │   │   └── adapters/         # Adapter layer DTOs
 │   │
@@ -73,8 +73,8 @@ from app.dtos.routers.ingest import FileUploadRequest, FileResponse
 from app.dtos.adapters.s3 import S3UploadResult, S3ListResult
 from app.dtos.adapters.bedrock import BedrockRAGResult
 
-# Common response wrappers
-from app.dtos.common import SuccessResponse, ErrorResponse
+# Common DTOs (Tenant context, Error models)
+from app.dtos.common import TenantContext, ErrorDetail
 ```
 
 ---
@@ -144,27 +144,35 @@ Interactive API documentation is available at `/docs` when running the server:
 
 ### Response Format
 
-All responses follow a unified structure:
+All endpoints return **Pydantic models directly** with appropriate **HTTP status codes** (REST standard):
 
 ```json
-// Success
+// Success (HTTP 200/201)
 {
-  "success": true,
-  "data": { /* endpoint-specific data */ }
+  "answer": "RAG combines retrieval and generation...",
+  "session_id": "session-123",
+  "model_used": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+  "citations": [/* citation objects */]
 }
 
-// Error
+// Error (HTTP 4xx/5xx)
 {
-  "success": false,
-  "error": {
-    "type": "ErrorType",
-    "message": "Human-readable message",
-    "detail": null
+  "detail": {
+    "type": "ValidationError",
+    "message": "Invalid tenant ID format",
+    "path": "/chat"
   }
 }
 ```
 
-See [Architecture Documentation](ARCHITECTURE.md#response-format) for detailed examples.
+**HTTP Status Codes:**
+- `200 OK`: Successful query/retrieval
+- `201 Created`: Resource created (file upload)
+- `400 Bad Request`: Validation errors
+- `404 Not Found`: Resource not found
+- `500 Internal Server Error`: Server errors
+
+See [Architecture Documentation](ARCHITECTURE.md) for detailed request/response flows.
 
 ---
 

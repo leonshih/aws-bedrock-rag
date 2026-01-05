@@ -76,8 +76,8 @@ def get_document(self, doc_id: str) -> DocumentDTO:
 async def create_doc(request: CreateDocRequest) -> DocumentDTO:
     return service.create_document(request)
 
-# ❌ BAD: Wrapper pattern (Deprecated)
-return {"success": True, "data": result}
+# ❌ BAD: Manual dictionary construction
+return {"answer": "...", "session_id": "..."}  # Use Pydantic models instead
 ```
 
 ---
