@@ -4,7 +4,6 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)
 ![Docker](https://img.shields.io/badge/Docker-Container-blue?logo=docker&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python&logoColor=white)
-![Tests](https://img.shields.io/badge/Tests-148%2F150_passing-success)
 
 A production-ready **Retrieval-Augmented Generation (RAG)** API powered by AWS Bedrock Knowledge Bases and FastAPI. Built with clean architecture principles, comprehensive testing, and multi-tenant support.
 

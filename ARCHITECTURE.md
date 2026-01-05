@@ -232,37 +232,6 @@ class RAGService:
 
 ---
 
-## 🔄 Response Format
-
-### Unified Response Structure
-
-All API responses follow a consistent format:
-
-#### Success Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "answer": "...",
-    "citations": [...]
-  }
-}
-```
-
-#### Error Response
-
-```json
-{
-  "success": false,
-  "error": {
-    "type": "ValidationError",
-    "message": "Invalid request format",
-    "detail": "Field 'query' is required"
-  }
-}
-```
-
 ### Error Handling Flow
 
 ```
