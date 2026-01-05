@@ -251,6 +251,24 @@ AWS managed vector database used by Bedrock Knowledge Bases. Handles vector stor
 
 ## P
 
+### Phase
+
+A major milestone in the project development lifecycle, defined in [`PROJECT_STATUS.md`](../PROJECT_STATUS.md). Each Phase contains multiple **Tasks** (checklist items) that must be completed sequentially.
+
+**Characteristics:**
+- Phases are numbered sequentially (Phase 0, Phase 1, Phase 2, etc.)
+- Each Phase has a completion percentage
+- A Phase is considered complete only when ALL tasks within it are marked `[x]`
+- **Critical Rule:** Must complete ALL tasks in Phase N before starting Phase N+1
+
+**Example:**
+```markdown
+### ⏳ Phase 4: Multi-Tenant Architecture (In Progress - 88% Complete)
+- [x] Tenant context model with UUID validation
+- [x] Tenant middleware implementation
+- [ ] Multi-tenant test coverage  ← Must complete this before Phase 5
+```
+
 ### Pydantic
 
 A Python library for data validation using type hints. All DTOs in this project are Pydantic `BaseModel` subclasses.
@@ -537,6 +555,33 @@ Exception raised when required `X-Tenant-ID` header is missing from HTTP request
 Exception raised when `tenant_id` format is invalid (not a valid UUID).
 
 **HTTP Status:** 422 Unprocessable Entity
+
+### Task
+
+A single actionable checklist item within a **Phase** in [`PROJECT_STATUS.md`](../PROJECT_STATUS.md). Tasks represent atomic units of work that can be completed and verified independently.
+
+**Format:**
+- Uncompleted: `- [ ] Task description`
+- Completed: `- [x] Task description`
+
+**Rules:**
+1. **One Task at a Time:** Only work on ONE uncompleted task per development cycle
+2. **Sequential Execution:** Tasks must be completed in the order they appear
+3. **Definition of Done:** A task is complete when:
+   - Implementation is finished
+   - Tests are written and passing
+   - Documentation is updated
+   - Changes are committed to git
+
+**Example:**
+```markdown
+### Phase 5 Checklist:
+- [x] Remove SuccessResponse[T] from common.py  ← Completed task
+- [ ] Refactor RAGService.query() method        ← Current task (in-progress)
+- [ ] Update Router layer                       ← Next task (not started)
+```
+
+**Reference:** See [Development Workflow](../.github/copilot-instructions.md#step-1-atomic-selection) for task selection rules.
 
 ---
 

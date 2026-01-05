@@ -29,8 +29,12 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
   - If uncommitted changes exist → **STOP and commit them first** using Step 5
   - If working tree is clean → Proceed to task selection
 - Read `@PROJECT_STATUS.md`.
-- **Constraint:** Select **ONLY the single next uncompleted checklist item (`[ ]`)** from the current phase.
-- Briefly state: _"I will focus solely on the task: [Task Name]"_.
+- **Phase Completion Rule (CRITICAL):**
+  - **ALWAYS scan ALL Phases** (starting from Phase 0) to find the **first Phase** that has uncompleted items (`[ ]`)
+  - **Do NOT skip to the next Phase** if the current Phase still has uncompleted tasks
+  - Example: If Phase 4 shows "88% Complete" with 1 uncompleted item, you MUST complete Phase 4 first before moving to Phase 5
+- **Task Selection:** Select **ONLY the single next uncompleted checklist item (`[ ]`)** from the earliest incomplete Phase.
+- Briefly state: _"I will focus solely on the task: [Phase X - Task Name]"_.
 
 ## Step 2: Planning & Discussion
 
