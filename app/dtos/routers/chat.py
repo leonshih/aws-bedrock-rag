@@ -5,7 +5,7 @@ Defines request/response models for the chat/query endpoint.
 """
 from typing import List, Optional, Dict, Any
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class MetadataFilter(BaseModel):
@@ -48,8 +48,8 @@ class ChatRequest(BaseModel):
         description="Maximum number of documents to retrieve"
     )
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "query": "What are the side effects of aspirin?",
                 "metadata_filters": [
@@ -62,6 +62,7 @@ class ChatRequest(BaseModel):
                 "max_results": 5
             }
         }
+    )
 
 
 class ChatResponse(BaseModel):
@@ -75,8 +76,8 @@ class ChatResponse(BaseModel):
     session_id: Optional[str] = Field(None, description="Conversation session identifier")
     model_used: Optional[str] = Field(None, description="Bedrock model that generated the response")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "answer": "Aspirin's common side effects include stomach upset, heartburn, and increased bleeding risk.",
                 "citations": [
@@ -89,3 +90,4 @@ class ChatResponse(BaseModel):
                 "model_used": "anthropic.claude-3-5-sonnet-20241022-v2:0"
             }
         }
+    )

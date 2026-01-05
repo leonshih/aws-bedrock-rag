@@ -256,17 +256,20 @@ AWS managed vector database used by Bedrock Knowledge Bases. Handles vector stor
 A major milestone in the project development lifecycle, defined in [`PROJECT_STATUS.md`](../PROJECT_STATUS.md). Each Phase contains multiple **Tasks** (checklist items) that must be completed sequentially.
 
 **Characteristics:**
+
 - Phases are numbered sequentially (Phase 0, Phase 1, Phase 2, etc.)
 - Each Phase has a completion percentage
 - A Phase is considered complete only when ALL tasks within it are marked `[x]`
 - **Critical Rule:** Must complete ALL tasks in Phase N before starting Phase N+1
 
 **Example:**
+
 ```markdown
 ### ⏳ Phase 4: Multi-Tenant Architecture (In Progress - 88% Complete)
+
 - [x] Tenant context model with UUID validation
 - [x] Tenant middleware implementation
-- [ ] Multi-tenant test coverage  ← Must complete this before Phase 5
+- [ ] Multi-tenant test coverage ← Must complete this before Phase 5
 ```
 
 ### Pydantic
@@ -433,17 +436,17 @@ __init__.py              # Package exports
 
 ### Environment Variable Glossary
 
-| Variable                 | Type   | Description                                  |
-| ------------------------ | ------ | -------------------------------------------- |
-| `ENVIRONMENT`            | `str`  | Deployment environment (dev/staging/prod)    |
-| `AWS_REGION`             | `str`  | AWS region (e.g., us-east-1)                 |
-| `AWS_PROFILE`            | `str`  | AWS CLI profile name (optional)              |
-| `BEDROCK_KB_ID`          | `str`  | Knowledge Base identifier                    |
-| `BEDROCK_DATA_SOURCE_ID` | `str`  | Data source identifier                       |
-| `BEDROCK_MODEL_ID`       | `str`  | LLM model identifier or inference profile    |
-| `S3_BUCKET_NAME`         | `str`  | S3 bucket for document storage               |
-| `APP_ENV`                | `str`  | Application environment (dev/prod)           |
-| `LOG_LEVEL`              | `str`  | Logging verbosity (DEBUG/INFO/WARNING/ERROR) |
+| Variable                 | Type  | Description                                  |
+| ------------------------ | ----- | -------------------------------------------- |
+| `ENVIRONMENT`            | `str` | Deployment environment (dev/staging/prod)    |
+| `AWS_REGION`             | `str` | AWS region (e.g., us-east-1)                 |
+| `AWS_PROFILE`            | `str` | AWS CLI profile name (optional)              |
+| `BEDROCK_KB_ID`          | `str` | Knowledge Base identifier                    |
+| `BEDROCK_DATA_SOURCE_ID` | `str` | Data source identifier                       |
+| `BEDROCK_MODEL_ID`       | `str` | LLM model identifier or inference profile    |
+| `S3_BUCKET_NAME`         | `str` | S3 bucket for document storage               |
+| `APP_ENV`                | `str` | Application environment (dev/prod)           |
+| `LOG_LEVEL`              | `str` | Logging verbosity (DEBUG/INFO/WARNING/ERROR) |
 
 ---
 
@@ -504,6 +507,7 @@ __init__.py              # Package exports
 An isolated customer/organization in a multi-tenant system. Each tenant's data is logically separated to ensure data privacy and security.
 
 **In This Project:**
+
 - Identified by UUID v4 (`tenant_id`)
 - Enforced at middleware layer (✅ implemented)
 - Isolated via S3 path prefixes (`documents/{tenant_id}/`) (✅ implemented)
@@ -516,14 +520,17 @@ A data model containing tenant identification information, passed through reques
 **Model:** [`TenantContext`](../app/dtos/common.py)
 
 **Fields:**
+
 - `tenant_id`: UUID - Unique tenant identifier
 
 **Validation:**
+
 - Must be valid UUID v4 format
 - Cannot be None or empty
 - Accepts UUID with or without hyphens
 
 **Example:**
+
 ```python
 context = TenantContext(tenant_id="550e8400-e29b-41d4-a716-446655440000")
 ```
@@ -533,6 +540,7 @@ context = TenantContext(tenant_id="550e8400-e29b-41d4-a716-446655440000")
 Architectural pattern ensuring each tenant's data is completely separated from others.
 
 **Implementation Layers:**
+
 1. **Storage:** S3 paths prefixed with `{tenant_id}/` (✅ implemented)
 2. **Retrieval:** Auto-injected metadata filters in RAG queries (✅ implemented)
 3. **Middleware:** Automatic tenant extraction from headers (✅ implemented)
@@ -555,10 +563,12 @@ Exception raised when `tenant_id` format is invalid (not a valid UUID).
 A single actionable checklist item within a **Phase** in [`PROJECT_STATUS.md`](../PROJECT_STATUS.md). Tasks represent atomic units of work that can be completed and verified independently.
 
 **Format:**
+
 - Uncompleted: `- [ ] Task description`
 - Completed: `- [x] Task description`
 
 **Rules:**
+
 1. **One Task at a Time:** Only work on ONE uncompleted task per development cycle
 2. **Sequential Execution:** Tasks must be completed in the order they appear
 3. **Definition of Done:** A task is complete when:
@@ -568,11 +578,13 @@ A single actionable checklist item within a **Phase** in [`PROJECT_STATUS.md`](.
    - Changes are committed to git
 
 **Example:**
+
 ```markdown
 ### Phase 5 Checklist:
-- [x] Remove SuccessResponse[T] from common.py  ← Completed task
-- [ ] Refactor RAGService.query() method        ← Current task (in-progress)
-- [ ] Update Router layer                       ← Next task (not started)
+
+- [x] Remove SuccessResponse[T] from common.py ← Completed task
+- [ ] Refactor RAGService.query() method ← Current task (in-progress)
+- [ ] Update Router layer ← Next task (not started)
 ```
 
 **Reference:** See [Development Workflow](../.github/copilot-instructions.md#step-1-atomic-selection) for task selection rules.

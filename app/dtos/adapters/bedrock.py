@@ -4,7 +4,7 @@ Bedrock Adapter Response DTOs
 Type-safe response models for Bedrock operations.
 """
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class BedrockRetrievalReference(BaseModel):
@@ -14,14 +14,15 @@ class BedrockRetrievalReference(BaseModel):
     s3_uri: str = Field(description="S3 URI of the source document")
     score: Optional[float] = Field(default=None, description="Relevance score")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "content": "RAG combines retrieval and generation...",
                 "s3_uri": "s3://bucket/documents/rag-guide.pdf",
                 "score": 0.95
             }
         }
+    )
 
 
 class BedrockRAGResult(BaseModel):
@@ -34,8 +35,8 @@ class BedrockRAGResult(BaseModel):
         description="List of retrieved references used to generate the answer"
     )
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "answer": "RAG (Retrieval-Augmented Generation) combines...",
                 "session_id": "session-abc123",
@@ -48,6 +49,7 @@ class BedrockRAGResult(BaseModel):
                 ]
             }
         }
+    )
 
 
 class BedrockIngestionJobResult(BaseModel):
@@ -58,8 +60,8 @@ class BedrockIngestionJobResult(BaseModel):
     knowledge_base_id: str = Field(description="ID of the Knowledge Base")
     data_source_id: str = Field(description="ID of the data source")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "job_id": "ingestion-job-abc123",
                 "status": "STARTING",
@@ -67,3 +69,4 @@ class BedrockIngestionJobResult(BaseModel):
                 "data_source_id": "DS67890"
             }
         }
+    )

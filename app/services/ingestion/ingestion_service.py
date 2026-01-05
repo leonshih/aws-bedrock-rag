@@ -7,7 +7,7 @@ Handles the complete lifecycle of document ingestion into Bedrock Knowledge Base
 import json
 import logging
 from typing import List, Optional, Dict, Any, BinaryIO
-from datetime import datetime
+from datetime import datetime, UTC
 from uuid import UUID
 from app.adapters.s3 import S3Adapter
 from app.adapters.bedrock import BedrockAdapter
@@ -90,7 +90,7 @@ class IngestionService:
             filename=filename,
             size=len(file_content),
             s3_key=s3_key,
-            last_modified=datetime.utcnow(),
+            last_modified=datetime.now(UTC),
             metadata=metadata if metadata else None
         )
     

@@ -6,7 +6,7 @@ Defines request/response models for file upload/list/delete endpoints.
 from typing import Optional, Dict, Any, List
 from uuid import UUID
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class FileMetadata(BaseModel):
@@ -22,8 +22,8 @@ class FileMetadata(BaseModel):
         description="Custom key-value metadata (e.g., author, year, category, tags)"
     )
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
                 "attributes": {
@@ -34,6 +34,7 @@ class FileMetadata(BaseModel):
                 }
             }
         }
+    )
 
 
 class FileUploadRequest(BaseModel):
@@ -49,8 +50,8 @@ class FileUploadRequest(BaseModel):
         description="Custom metadata to attach to the document"
     )
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
                 "metadata": {
@@ -63,6 +64,7 @@ class FileUploadRequest(BaseModel):
                 }
             }
         }
+    )
 
 
 class FileResponse(BaseModel):
@@ -77,8 +79,8 @@ class FileResponse(BaseModel):
         description="Custom metadata attributes from .metadata.json"
     )
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "filename": "medical_guideline_2023.pdf",
                 "size": 2048576,
@@ -91,6 +93,7 @@ class FileResponse(BaseModel):
                 }
             }
         }
+    )
 
 
 class FileListResponse(BaseModel):
@@ -103,8 +106,8 @@ class FileListResponse(BaseModel):
     total_count: int = Field(..., description="Total number of files")
     total_size: int = Field(..., description="Total size in bytes")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "files": [
                     {
@@ -117,6 +120,7 @@ class FileListResponse(BaseModel):
                 "total_size": 1024000
             }
         }
+    )
 
 
 class FileDeleteResponse(BaseModel):
@@ -126,11 +130,12 @@ class FileDeleteResponse(BaseModel):
     status: str = Field(..., description="Deletion status")
     message: Optional[str] = Field(None, description="Additional information")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "filename": "old_document.pdf",
                 "status": "deleted",
                 "message": "File and metadata removed, sync job triggered"
             }
         }
+    )

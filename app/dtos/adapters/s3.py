@@ -4,7 +4,7 @@ S3 Adapter Response DTOs
 Type-safe response models for S3 operations.
 """
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
 
@@ -14,13 +14,14 @@ class S3UploadResult(BaseModel):
     etag: str = Field(description="S3 object ETag")
     version_id: Optional[str] = Field(default=None, description="S3 object version ID if versioning enabled")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "etag": "\"5d41402abc4b2a76b9719d911017c592\"",
                 "version_id": "v1"
             }
         }
+    )
 
 
 class S3ObjectInfo(BaseModel):
@@ -31,8 +32,8 @@ class S3ObjectInfo(BaseModel):
     last_modified: str = Field(description="Last modification timestamp (ISO format)")
     etag: str = Field(description="S3 object ETag")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "key": "documents/example.pdf",
                 "size": 1024000,
@@ -40,6 +41,7 @@ class S3ObjectInfo(BaseModel):
                 "etag": "\"5d41402abc4b2a76b9719d911017c592\""
             }
         }
+    )
 
 
 class S3ListResult(BaseModel):
@@ -49,8 +51,8 @@ class S3ListResult(BaseModel):
     total_count: int = Field(description="Total number of objects")
     total_size: int = Field(description="Total size of all objects in bytes")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "objects": [
                     {
@@ -64,6 +66,7 @@ class S3ListResult(BaseModel):
                 "total_size": 1024000
             }
         }
+    )
 
 
 class S3DeleteResult(BaseModel):
@@ -72,10 +75,11 @@ class S3DeleteResult(BaseModel):
     deleted: bool = Field(description="Whether the object was successfully deleted")
     key: str = Field(description="The key of the deleted object")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "deleted": True,
                 "key": "documents/example.pdf"
             }
         }
+    )

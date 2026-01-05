@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-05  
 **Current Phase:** Phase 6 (Containerization & Deployment) - NOT STARTED  
-**Overall Progress:** ~98% Complete
+**Overall Progress:** ~99% Complete
 
 ---
 
@@ -100,6 +100,28 @@
    - [x] Update `README.md`: Update API examples with new format
    - [x] Update `TECH_RULES.md`: Remove deprecated wrapper pattern examples
 
+### ✅ Phase 5.5: Code Quality & Pydantic V2 Migration (100% Complete) 🎉
+
+**Objective:** Eliminate deprecation warnings and modernize codebase to Pydantic V2 standards
+
+**Implementation Checklist:**
+
+1. **Pydantic V2 Migration** ✅ (16 DTOs)
+
+   - [x] Migrate `app/dtos/common.py` (2 classes: TenantContext, ErrorDetail)
+   - [x] Migrate `app/dtos/routers/chat.py` (2 classes: ChatRequest, ChatResponse)
+   - [x] Migrate `app/dtos/routers/ingest.py` (5 classes: FileMetadata, FileUploadRequest, FileResponse, FileListResponse, FileDeleteResponse)
+   - [x] Migrate `app/dtos/adapters/bedrock.py` (3 classes: BedrockRetrievalReference, BedrockRAGResult, BedrockIngestionJobResult)
+   - [x] Migrate `app/dtos/adapters/s3.py` (4 classes: S3UploadResult, S3ObjectInfo, S3ListResult, S3DeleteResult)
+
+2. **Datetime Modernization** ✅ (1 file)
+
+   - [x] Replace `datetime.utcnow()` with `datetime.now(UTC)` in `app/services/ingestion/ingestion_service.py`
+
+3. **Verification** ✅
+   - [x] Run test suite and verify all 231 tests pass
+   - [x] Confirm deprecation warnings reduced from 46 to 10 (all Pydantic warnings eliminated)
+
 ### ⏳ Phase 6: Containerization & Deployment (Not Started)
 
 - [ ] Docker optimization
@@ -184,6 +206,20 @@
 ## 📝 Recent Changes
 
 **2026-01-05** (Continued):
+
+- ✅ **COMPLETED Phase 5.5: Code Quality & Pydantic V2 Migration**
+  - **Pydantic V2 Migration**: Migrated 16 DTO classes from `class Config:` to `model_config = ConfigDict(...)`
+    - `app/dtos/common.py`: TenantContext, ErrorDetail (2 classes)
+    - `app/dtos/routers/chat.py`: ChatRequest, ChatResponse (2 classes)
+    - `app/dtos/routers/ingest.py`: 5 classes (FileMetadata, FileUploadRequest, FileResponse, FileListResponse, FileDeleteResponse)
+    - `app/dtos/adapters/bedrock.py`: 3 classes (BedrockRetrievalReference, BedrockRAGResult, BedrockIngestionJobResult)
+    - `app/dtos/adapters/s3.py`: 4 classes (S3UploadResult, S3ObjectInfo, S3ListResult, S3DeleteResult)
+  - **Datetime Modernization**: Replaced deprecated `datetime.utcnow()` with `datetime.now(UTC)` in IngestionService
+  - **Impact**: Eliminated all 16 Pydantic V2 deprecation warnings, reduced total warnings from 46 to 10
+  - **Test Results**: 231 tests ALL PASSING ✅ (100% success rate)
+  - **Result**: 🎉 **Phase 5.5 COMPLETE (100%)** - Codebase fully modernized to Pydantic V2 standards
+
+**2026-01-05**:
 
 - ✅ **COMPLETED Phase 5.5: Documentation Updates**
   - **ARCHITECTURE.md**: Updated request/response flow diagrams to show direct Pydantic model returns

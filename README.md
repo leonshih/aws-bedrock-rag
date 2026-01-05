@@ -166,6 +166,7 @@ All endpoints return **Pydantic models directly** with appropriate **HTTP status
 ```
 
 **HTTP Status Codes:**
+
 - `200 OK`: Successful query/retrieval
 - `201 Created`: Resource created (file upload)
 - `400 Bad Request`: Validation errors
