@@ -143,7 +143,7 @@ async def upload_file(
     file: Annotated[UploadFile, File(description="The file to upload")],
     metadata: Annotated[Optional[str], Form(description="Optional JSON metadata")] = None,
     ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
-) -> dict:
+) -> FileResponse:
     """
     Upload a document to the Knowledge Base.
     
@@ -154,7 +154,7 @@ async def upload_file(
         ingestion_service: Injected Ingestion service instance
         
     Returns:
-        Dict with success flag and FileResponse data
+        FileResponse with file details
         
     Raises:
         HTTPException: 400 for invalid input, 500 for server errors

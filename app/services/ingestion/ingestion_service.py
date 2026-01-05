@@ -38,7 +38,7 @@ class IngestionService:
         filename: str,
         tenant_id: UUID,
         metadata: Optional[Dict[str, Any]] = None
-    ) -> dict:
+    ) -> FileResponse:
         """
         Upload a document to S3 and trigger Knowledge Base sync.
         
@@ -49,7 +49,7 @@ class IngestionService:
             metadata: Optional custom metadata attributes as dict
             
         Returns:
-            Dict with success flag and FileResponse data
+            FileResponse with file details
         """
         logger.info(f"Uploading document for tenant {tenant_id}: {filename} ({len(file_content)} bytes)")
         
@@ -86,16 +86,13 @@ class IngestionService:
         logger.info(f"Successfully uploaded {filename}, sync triggered")
         
         # Return file response
-        return {
-            "success": True,
-            "data": FileResponse(
-                filename=filename,
-                size=len(file_content),
-                s3_key=s3_key,
-                last_modified=datetime.utcnow(),
-                metadata=metadata if metadata else None
-            )
-        }
+        return FileResponse(
+            filename=filename,
+            size=len(file_content),
+            s3_key=s3_key,
+            last_modified=datetime.utcnow(),
+            metadata=metadata if metadata else None
+        )
     
     def list_documents(self, tenant_id: UUID) -> dict:
         """

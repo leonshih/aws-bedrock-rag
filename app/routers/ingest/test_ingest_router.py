@@ -38,16 +38,13 @@ def mock_ingestion_service():
     }
     
     # Mock upload_document response
-    service.upload_document.return_value = {
-        "success": True,
-        "data": FileResponse(
-            filename="uploaded.pdf",
-            size=2048000,
-            last_modified=datetime(2024, 1, 15, 11, 0, 0),
-            s3_key="documents/uploaded.pdf",
-            metadata={"category": "test"}
-        )
-    }
+    service.upload_document.return_value = FileResponse(
+        filename="uploaded.pdf",
+        size=2048000,
+        last_modified=datetime(2024, 1, 15, 11, 0, 0),
+        s3_key="documents/uploaded.pdf",
+        metadata={"category": "test"}
+    )
     
     # Mock delete_document response
     service.delete_document.return_value = {
@@ -139,10 +136,8 @@ def test_upload_file_success(client, mock_ingestion_service):
     
     assert response.status_code == 200
     data = response.json()
-    assert data["success"] is True
-    assert "data" in data
-    assert data["data"]["filename"] == "uploaded.pdf"
-    assert data["data"]["size"] == 2048000
+    assert data["filename"] == "uploaded.pdf"
+    assert data["size"] == 2048000
     assert mock_ingestion_service.upload_document.call_count == 1
 
 

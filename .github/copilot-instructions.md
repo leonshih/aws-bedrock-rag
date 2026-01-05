@@ -18,7 +18,7 @@ Before answering or generating code, you MUST inject the following context:
 
 # 🔄 Development Workflow (The Atomic Loop)
 
-**🚨 NAVIGATION RULE:** At the very beginning of EVERY response, you MUST explicitly state the current step you are executing (e.g., `## Current Step: Step 2 Planning`).
+**🚨 NAVIGATION RULE:** At the very beginning of EVERY response, you MUST explicitly state the current step you are executing (e.g., `## 📌 Current Step: Step 2 Planning`).
 
 You strictly follow this process for every coding task. **Focus on ONE checklist item at a time.**
 

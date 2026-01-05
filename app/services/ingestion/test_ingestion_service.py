@@ -67,14 +67,11 @@ class TestIngestionService:
         )
         
         # Verify response
-        assert isinstance(response, dict)
-        assert response["success"] is True
-        assert "data" in response
-        assert isinstance(response["data"], FileResponse)
-        assert response["data"].filename == "test.pdf"
-        assert response["data"].size == len(file_content)
-        assert response["data"].s3_key == f"documents/{TEST_TENANT_ID}/test.pdf"
-        assert response["data"].metadata is None
+        assert isinstance(response, FileResponse)
+        assert response.filename == "test.pdf"
+        assert response.size == len(file_content)
+        assert response.s3_key == f"documents/{TEST_TENANT_ID}/test.pdf"
+        assert response.metadata is None
         
         # Verify S3 upload was called with tenant-specific path
         mock_s3.upload_file.assert_called_once_with(
@@ -114,8 +111,8 @@ class TestIngestionService:
         )
         
         # Verify response includes metadata
-        assert response["success"] is True
-        assert response["data"].metadata == metadata
+        assert isinstance(response, FileResponse)
+        assert response.metadata == metadata
         
         # Verify two S3 uploads: file + metadata
         assert mock_s3.upload_file.call_count == 2
