@@ -51,7 +51,24 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 - Generate code following the **Coding Standards** (see below).
 - Create/Update co-located unit tests (test\_\*.py) immediately matching the implementation.
 - MANDATORY ACTION: Run tests using `make test` command (DO NOT use raw pytest or python commands).
-- **Crucial:** Stop immediately after completing the agreed task. Do NOT proceed to the next checklist item automatically.
+- **Crucial:** After coding, do NOT go to Step 4 yet. **Execute Step 3.5 immediately.**
+
+## Step 3.5: Code Quality & Security Audit (Self-Correction)
+
+- **IMMEDIATE ACTION:** Before updating documentation, strictly review the code you just generated against these criteria:
+
+  1.  **Security:** Are there SQL Injections? Exposed Secrets? Unvalidated Inputs? (OWASP Top 10 check).
+  2.  **Logic:** Are there infinite loops? Race conditions? Unhandled edge cases?
+  3.  **Redundancy:** Are there unused imports? Dead code? Redundant logic that can be simplified?
+  4.  **Privacy:** Are we accidentally logging PII (Personally Identifiable Information)?
+
+- **Decision Gate:**
+  - ✅ **PASS:** If the code is clean, secure, and optimal → Proceed immediately to **Step 4**.
+  - ❌ **FAIL:** If _ANY_ issue is found:
+    1.  **Stop:** Do NOT proceed to Step 4.
+    2.  **Report:** Explicitly state: _"I detected a potential issue: [Description of Issue]."_
+    3.  **Loop Back:** Return to **Step 2 (Planning)** to propose a fix for this specific issue.
+    4.  **Wait:** Ask for user approval on the fix plan.
 
 ## Step 4: Documentation Update (Definition of Done)
 
