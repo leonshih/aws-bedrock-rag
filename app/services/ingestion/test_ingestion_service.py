@@ -8,7 +8,7 @@ import json
 from unittest.mock import Mock, patch, ANY
 from datetime import datetime
 from app.services.ingestion import IngestionService
-from app.dtos.routers.ingest import FileMetadata, FileResponse
+from app.dtos.routers.ingest import FileMetadata, FileResponse, FileListResponse
 from app.utils.config import Config
 
 # Test tenant ID for multi-tenant testing
@@ -143,10 +143,10 @@ class TestIngestionService:
         service = IngestionService(config=mock_config)
         response = service.list_documents(tenant_id=TEST_TENANT_ID)
         
-        assert response["success"] is True
-        assert response["data"].total_count == 0
-        assert response["data"].total_size == 0
-        assert response["data"].files == []
+        assert isinstance(response, FileListResponse)
+        assert response.total_count == 0
+        assert response.total_size == 0
+        assert response.files == []
     
     @patch('app.services.ingestion.ingestion_service.S3Adapter')
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
@@ -179,12 +179,12 @@ class TestIngestionService:
         service = IngestionService(config=mock_config)
         response = service.list_documents(tenant_id=TEST_TENANT_ID)
         
-        assert response["success"] is True
-        assert response["data"].total_count == 2
-        assert response["data"].total_size == 3072
-        assert len(response["data"].files) == 2
-        assert response["data"].files[0].filename == "doc1.pdf"
-        assert response["data"].files[1].filename == "doc2.pdf"
+        assert isinstance(response, FileListResponse)
+        assert response.total_count == 2
+        assert response.total_size == 3072
+        assert len(response.files) == 2
+        assert response.files[0].filename == "doc1.pdf"
+        assert response.files[1].filename == "doc2.pdf"
     
     @patch('app.services.ingestion.ingestion_service.S3Adapter')
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
@@ -221,11 +221,11 @@ class TestIngestionService:
         response = service.list_documents(tenant_id=TEST_TENANT_ID)
         
         # Should only list the main file, not the metadata file
-        assert response["success"] is True
-        assert response["data"].total_count == 1
-        assert response["data"].files[0].filename == "doc1.pdf"
+        assert isinstance(response, FileListResponse)
+        assert response.total_count == 1
+        assert response.files[0].filename == "doc1.pdf"
         # Metadata should be loaded and attached
-        assert response["data"].files[0].metadata == {"author": "Dr. Smith"}
+        assert response.files[0].metadata == {"author": "Dr. Smith"}
     
     @patch('app.services.ingestion.ingestion_service.S3Adapter')
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')

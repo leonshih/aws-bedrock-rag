@@ -20,22 +20,19 @@ def mock_ingestion_service():
     service = Mock()
     
     # Mock list_documents response
-    service.list_documents.return_value = {
-        "success": True,
-        "data": FileListResponse(
-            files=[
-                FileResponse(
-                    filename="test-doc.pdf",
-                    size=1024000,
-                    last_modified=datetime(2024, 1, 15, 10, 30, 0),
-                    s3_key="documents/test-doc.pdf",
-                    metadata={"category": "research", "year": "2024"}
-                )
-            ],
-            total_count=1,
-            total_size=1024000
-        )
-    }
+    service.list_documents.return_value = FileListResponse(
+        files=[
+            FileResponse(
+                filename="test-doc.pdf",
+                size=1024000,
+                last_modified=datetime(2024, 1, 15, 10, 30, 0),
+                s3_key="documents/test-doc.pdf",
+                metadata={"category": "research", "year": "2024"}
+            )
+        ],
+        total_count=1,
+        total_size=1024000
+    )
     
     # Mock upload_document response
     service.upload_document.return_value = FileResponse(
@@ -74,12 +71,10 @@ def test_list_files_success(client, mock_ingestion_service):
     
     assert response.status_code == 200
     data = response.json()
-    assert data["success"] is True
-    assert "data" in data
-    assert data["data"]["total_count"] == 1
-    assert data["data"]["total_size"] == 1024000
-    assert len(data["data"]["files"]) == 1
-    assert data["data"]["files"][0]["filename"] == "test-doc.pdf"
+    assert data["total_count"] == 1
+    assert data["total_size"] == 1024000
+    assert len(data["files"]) == 1
+    assert data["files"][0]["filename"] == "test-doc.pdf"
     assert mock_ingestion_service.list_documents.call_count == 1
 
 
@@ -97,22 +92,18 @@ def test_list_files_with_prefix(client, mock_ingestion_service):
 
 def test_list_files_empty(client, mock_ingestion_service):
     """Test listing when no files exist."""
-    mock_ingestion_service.list_documents.return_value = {
-        "success": True,
-        "data": FileListResponse(
-            files=[],
-            total_count=0,
-            total_size=0
-        )
-    }
+    mock_ingestion_service.list_documents.return_value = FileListResponse(
+        files=[],
+        total_count=0,
+        total_size=0
+    )
     
     response = client.get("/files", headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     assert response.status_code == 200
     data = response.json()
-    assert data["success"] is True
-    assert data["data"]["total_count"] == 0
-    assert len(data["data"]["files"]) == 0
+    assert data["total_count"] == 0
+    assert len(data["files"]) == 0
 
 
 def test_list_files_error(client, mock_ingestion_service):
@@ -298,18 +289,15 @@ def test_list_files_response_structure(client, mock_ingestion_service):
     assert response.status_code == 200
     data = response.json()
     
-    # Check wrapper structure
-    assert data["success"] is True
-    assert "data" in data
-    
-    # Check required fields in data
-    assert "files" in data["data"]
-    assert "total_count" in data["data"]
-    assert "total_size" in data["data"]
+    # Verify response structure (direct Pydantic model)
+    assert "files" in data
+    assert "total_count" in data
+    assert "total_size" in data
+    assert isinstance(data["files"], list)
     
     # Check file structure
-    if len(data["data"]["files"]) > 0:
-        file_obj = data["data"]["files"][0]
+    if len(data["files"]) > 0:
+        file_obj = data["files"][0]
         assert "filename" in file_obj
         assert "size" in file_obj
         assert "last_modified" in file_obj

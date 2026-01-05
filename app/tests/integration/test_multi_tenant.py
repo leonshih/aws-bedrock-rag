@@ -75,20 +75,18 @@ class TestMultiTenantDataIsolation:
         response_a = client.get("/files", headers={"X-Tenant-ID": TENANT_A_ID})
         assert response_a.status_code == 200
         data_a = response_a.json()
-        assert data_a["success"] is True
-        assert len(data_a["data"]["files"]) == 1
-        assert "tenant_a_file.pdf" in data_a["data"]["files"][0]["filename"]
+        assert len(data_a["files"]) == 1
+        assert "tenant_a_file.pdf" in data_a["files"][0]["filename"]
         
         # Tenant B lists their files
         response_b = client.get("/files", headers={"X-Tenant-ID": TENANT_B_ID})
         assert response_b.status_code == 200
         data_b = response_b.json()
-        assert data_b["success"] is True
-        assert len(data_b["data"]["files"]) == 1
-        assert "tenant_b_file.pdf" in data_b["data"]["files"][0]["filename"]
+        assert len(data_b["files"]) == 1
+        assert "tenant_b_file.pdf" in data_b["files"][0]["filename"]
         
         # Verify they see different files
-        assert data_a["data"]["files"][0]["filename"] != data_b["data"]["files"][0]["filename"]
+        assert data_a["files"][0]["filename"] != data_b["files"][0]["filename"]
 
     @patch('app.adapters.s3.s3_adapter.boto3.client')
     def test_different_tenants_see_different_file_lists(self, mock_boto_client, client):
@@ -121,12 +119,12 @@ class TestMultiTenantDataIsolation:
         # Tenant A sees 2 files
         response_a = client.get("/files", headers={"X-Tenant-ID": TENANT_A_ID})
         data_a = response_a.json()
-        assert data_a["data"]["total_count"] == 2
+        assert data_a["total_count"] == 2
         
         # Tenant B sees 1 file
         response_b = client.get("/files", headers={"X-Tenant-ID": TENANT_B_ID})
         data_b = response_b.json()
-        assert data_b["data"]["total_count"] == 1
+        assert data_b["total_count"] == 1
 
     @patch('app.adapters.s3.s3_adapter.boto3.client')
     def test_tenant_cannot_delete_other_tenant_files(self, mock_boto_client, client):
@@ -455,8 +453,8 @@ class TestMultiTenantErrorHandling:
         data_a = response_a.json()
         data_b = response_b.json()
         
-        assert len(data_a["data"]["files"]) == 1
-        assert "doc_a.pdf" in data_a["data"]["files"][0]["filename"]
+        assert len(data_a["files"]) == 1
+        assert "doc_a.pdf" in data_a["files"][0]["filename"]
         
-        assert len(data_b["data"]["files"]) == 1
-        assert "doc_b.pdf" in data_b["data"]["files"][0]["filename"]
+        assert len(data_b["files"]) == 1
+        assert "doc_b.pdf" in data_b["files"][0]["filename"]

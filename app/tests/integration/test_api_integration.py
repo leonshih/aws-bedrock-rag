@@ -161,15 +161,11 @@ class TestIngestRouterIntegration:
         # Should return successful response with file list
         assert response.status_code == 200
         json_data = response.json()
-        # Response has success wrapper
-        assert "success" in json_data
-        assert json_data["success"] is True
-        assert "data" in json_data
-        # Files are inside data object
-        data = json_data["data"]
-        assert "files" in data
-        assert "total_count" in data
-        assert isinstance(data["files"], list)
+        # Direct Pydantic model response
+        assert "files" in json_data
+        assert "total_count" in json_data
+        assert "total_size" in json_data
+        assert isinstance(json_data["files"], list)
 
     def test_upload_file_endpoint_exists(self, client):
         """Test upload file endpoint is registered and accessible."""

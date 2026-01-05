@@ -94,7 +94,7 @@ class IngestionService:
             metadata=metadata if metadata else None
         )
     
-    def list_documents(self, tenant_id: UUID) -> dict:
+    def list_documents(self, tenant_id: UUID) -> FileListResponse:
         """
         List all documents for a specific tenant.
         
@@ -102,7 +102,7 @@ class IngestionService:
             tenant_id: Tenant identifier for path isolation
             
         Returns:
-            Dict with success flag and FileListResponse data
+            FileListResponse with file list and statistics
         """
         # Construct tenant-specific prefix
         prefix = f"documents/{tenant_id}/"
@@ -160,14 +160,11 @@ class IngestionService:
         
         logger.info(f"Listed {len(files)} documents, total size: {total_size} bytes")
         
-        return {
-            "success": True,
-            "data": FileListResponse(
-                files=files,
-                total_count=len(files),
-                total_size=total_size
-            )
-        }
+        return FileListResponse(
+            files=files,
+            total_count=len(files),
+            total_size=total_size
+        )
     
     def delete_document(self, filename: str, tenant_id: UUID) -> dict:
         """

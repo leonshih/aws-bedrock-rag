@@ -70,7 +70,7 @@ def get_ingestion_service() -> IngestionService:
 async def list_files(
     request: Request,
     ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
-) -> dict:
+) -> FileListResponse:
     """
     List all documents for the authenticated tenant.
     
@@ -79,7 +79,7 @@ async def list_files(
         ingestion_service: Injected Ingestion service instance
         
     Returns:
-        Dict with success flag and FileListResponse data
+        FileListResponse with file list and statistics
         
     Raises:
         HTTPException: 500 for server errors
@@ -88,8 +88,7 @@ async def list_files(
     tenant_context = get_tenant_context(request)
     
     # Pass tenant_id to service for path isolation
-    response = ingestion_service.list_documents(tenant_id=tenant_context.tenant_id)
-    return response
+    return ingestion_service.list_documents(tenant_id=tenant_context.tenant_id)
 
 
 @router.post(
