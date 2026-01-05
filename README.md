@@ -10,20 +10,6 @@ A production-ready **Retrieval-Augmented Generation (RAG)** API powered by AWS B
 
 ---
 
-## Key Features
-
-- **Managed RAG Pipeline**: Leverages AWS Bedrock Knowledge Bases for document ingestion, embedding, and retrieval
-- **Multi-Tenant Architecture**: Complete data isolation with UUID-based tenant identification
-- **Document Management**: Upload, list, and delete documents with custom metadata
-- **Advanced Filtering**: Query documents using metadata filters (category, author, date, etc.)
-- **Citation Tracking**: Full source attribution with relevance scores
-- **High Performance**: Async FastAPI with sub-second response times
-- **Docker Ready**: Multi-stage builds optimized for production
-- **Well Tested**: 98.7% test pass rate with unit and integration tests
-- **Auto Documentation**: OpenAPI/Swagger UI at `/docs`
-
----
-
 ## Quick Links
 
 - **[Project Status](PROJECT_STATUS.md)** - Development roadmap and progress tracking

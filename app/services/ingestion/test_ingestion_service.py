@@ -240,10 +240,9 @@ class TestIngestionService:
         response = service.delete_document("test.pdf", tenant_id=TEST_TENANT_ID)
         
         # Verify response
-        assert response["success"] is True
-        assert response["data"].filename == "test.pdf"
-        assert response["data"].status == "deleted"
-        assert "sync triggered" in response["data"].message
+        assert response.filename == "test.pdf"
+        assert response.status == "deleted"
+        assert "sync triggered" in response.message
         
         # Verify S3 delete was called with tenant-specific path
         assert mock_s3.delete_file.call_count == 2
@@ -274,8 +273,7 @@ class TestIngestionService:
         # Should not raise exception
         response = service.delete_document("test.pdf", tenant_id=TEST_TENANT_ID)
         
-        assert response["success"] is True
-        assert response["data"].status == "deleted"
+        assert response.status == "deleted"
     
     def test_generate_metadata_json(self, ingestion_service):
         """Test metadata JSON generation."""

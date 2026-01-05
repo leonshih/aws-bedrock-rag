@@ -226,7 +226,7 @@ async def delete_file(
     filename: str,
     request: Request,
     ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
-) -> dict:
+) -> FileDeleteResponse:
     """
     Delete a document from the Knowledge Base.
     
@@ -236,7 +236,7 @@ async def delete_file(
         ingestion_service: Injected Ingestion service instance
         
     Returns:
-        Dict with success flag and FileDeleteResponse data
+        FileDeleteResponse with deletion details
         
     Raises:
         HTTPException: 404 if file not found, 500 for server errors

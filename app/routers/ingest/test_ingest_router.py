@@ -44,14 +44,11 @@ def mock_ingestion_service():
     )
     
     # Mock delete_document response
-    service.delete_document.return_value = {
-        "success": True,
-        "data": FileDeleteResponse(
-            filename="test-doc.pdf",
-            status="deleted",
-            message="File deleted successfully"
-        )
-    }
+    service.delete_document.return_value = FileDeleteResponse(
+        filename="test-doc.pdf",
+        status="deleted",
+        message="File deleted successfully"
+    )
     
     return service
 
@@ -195,10 +192,8 @@ def test_delete_file_success(client, mock_ingestion_service):
     
     assert response.status_code == 200
     data = response.json()
-    assert data["success"] is True
-    assert "data" in data
-    assert data["data"]["filename"] == "test-doc.pdf"
-    assert data["data"]["status"] == "deleted"
+    assert data["filename"] == "test-doc.pdf"
+    assert data["status"] == "deleted"
     assert mock_ingestion_service.delete_document.call_count == 1
 
 

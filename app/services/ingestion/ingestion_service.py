@@ -166,7 +166,7 @@ class IngestionService:
             total_size=total_size
         )
     
-    def delete_document(self, filename: str, tenant_id: UUID) -> dict:
+    def delete_document(self, filename: str, tenant_id: UUID) -> FileDeleteResponse:
         """
         Delete a document and its metadata from S3, then trigger sync.
         
@@ -175,7 +175,7 @@ class IngestionService:
             tenant_id: Tenant identifier for path isolation
             
         Returns:
-            Dict with success flag and FileDeleteResponse data
+            FileDeleteResponse with deletion details
         """
         logger.info(f"Deleting document for tenant {tenant_id}: {filename}")
         
@@ -205,14 +205,11 @@ class IngestionService:
         self._trigger_sync()
         logger.info(f"Successfully deleted {filename}, sync triggered")
         
-        return {
-            "success": True,
-            "data": FileDeleteResponse(
-                filename=filename,
-                status="deleted",
-                message="File and metadata removed, Knowledge Base sync triggered"
-            )
-        }
+        return FileDeleteResponse(
+            filename=filename,
+            status="deleted",
+            message="File and metadata removed, Knowledge Base sync triggered"
+        )
     
     def _generate_metadata_json(self, attributes: Dict[str, Any]) -> str:
         """
