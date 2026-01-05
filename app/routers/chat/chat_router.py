@@ -85,7 +85,7 @@ async def query_knowledge_base(
     chat_request: ChatRequest,
     fastapi_request: Request,
     rag_service: Annotated[RAGService, Depends(get_rag_service)]
-) -> dict:
+) -> ChatResponse:
     """
     Process a RAG query and return the answer with citations.
     
@@ -95,7 +95,7 @@ async def query_knowledge_base(
         rag_service: Injected RAG service instance
         
     Returns:
-        Dict with success flag and ChatResponse data
+        ChatResponse with answer and citations
         
     Raises:
         HTTPException: 400 for invalid requests, 500 for server errors
@@ -106,8 +106,4 @@ async def query_knowledge_base(
     # Pass tenant_id as separate parameter to service layer
     chat_response = rag_service.query(chat_request, tenant_id=tenant_context.tenant_id)
     
-    # Wrap response (will be removed in Phase 5.3)
-    return {
-        "success": True,
-        "data": chat_response
-    }
+    return chat_response

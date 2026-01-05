@@ -51,12 +51,10 @@ def test_query_success(client, mock_rag_service):
     
     assert response.status_code == 200
     data = response.json()
-    assert data["success"] is True
-    assert "data" in data
-    assert data["data"]["answer"] == "This is a test answer about RAG systems."
-    assert len(data["data"]["citations"]) == 1
-    assert data["data"]["citations"][0]["document_title"] == "test-doc.pdf"
-    assert data["data"]["session_id"] == "test-session-123"
+    assert data["answer"] == "This is a test answer about RAG systems."
+    assert len(data["citations"]) == 1
+    assert data["citations"][0]["document_title"] == "test-doc.pdf"
+    assert data["session_id"] == "test-session-123"
     assert mock_rag_service.query.call_count == 1
 
 
@@ -214,21 +212,16 @@ def test_response_structure(client, mock_rag_service):
     assert response.status_code == 200
     data = response.json()
     
-    # Check top-level structure
-    assert "success" in data
-    assert "data" in data
-    assert data["success"] is True
-    
-    # Check required fields in data
-    assert "answer" in data["data"]
-    assert "citations" in data["data"]
-    assert "session_id" in data["data"]
-    assert "model_used" in data["data"]
+    # Check required fields in response
+    assert "answer" in data
+    assert "citations" in data
+    assert "session_id" in data
+    assert "model_used" in data
     
     # Check citation structure
-    assert isinstance(data["data"]["citations"], list)
-    if len(data["data"]["citations"]) > 0:
-        citation = data["data"]["citations"][0]
+    assert isinstance(data["citations"], list)
+    if len(data["citations"]) > 0:
+        citation = data["citations"][0]
         assert "content" in citation
         assert "document_title" in citation
         assert "location" in citation
