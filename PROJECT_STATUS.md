@@ -1,8 +1,8 @@
 # Project Status
 
 **Last Updated:** 2026-01-05  
-**Current Phase:** Phase 4 (Multi-Tenant Architecture) - COMPLETE  
-**Overall Progress:** ~95% Complete
+**Current Phase:** Phase 5 (Response Format Refactoring) - IN PROGRESS  
+**Overall Progress:** ~97% Complete
 
 ---
 
@@ -52,7 +52,7 @@
 - [x] **Tenant-aware API documentation** (OpenAPI docs with X-Tenant-ID header requirements)
 - [x] **Multi-tenant integration test coverage** (15 comprehensive tests)
 
-### ⏳ Phase 5: Response Format Refactoring (In Progress - 20% Complete)
+### ⏳ Phase 5: Response Format Refactoring (In Progress - 50% Complete)
 
 **Objective:** Migrate from wrapper pattern `{"success": bool, "data": T}` to REST standard (direct Pydantic Model + HTTP Status Codes)
 
@@ -82,10 +82,10 @@
 
 3. **Router Layer Adjustment** (2 files)
 
-   - [ ] Update `ChatRouter.chat()` to return direct model with `status_code=200`
-   - [ ] Update `IngestRouter.upload()` to return direct model with `status_code=201`
-   - [ ] Update `IngestRouter.list_files()` to return direct model with `status_code=200`
-   - [ ] Update `IngestRouter.delete_file()` to return direct model with `status_code=200`
+   - [x] Update `ChatRouter.chat()` to return direct model with `status_code=200`
+   - [x] Update `IngestRouter.upload()` to return direct model with `status_code=201`
+   - [x] Update `IngestRouter.list_files()` to return direct model with `status_code=200`
+   - [x] Update `IngestRouter.delete_file()` to return direct model with `status_code=200`
 
 4. **Test Suite Updates** (15+ files)
 
@@ -181,6 +181,19 @@
 ---
 
 ## 📝 Recent Changes
+
+**2026-01-05** (Continued):
+
+- ✅ **Completed Phase 5.3: Router Layer Status Code Implementation**
+  - **Feature**: Added explicit HTTP status codes to all router endpoints
+    - Chat endpoint: Added `status_code=200` to `/chat` POST
+    - Ingest upload: Changed to `status_code=201` (REST standard for resource creation)
+    - Ingest list: Added `status_code=200` to `/files` GET
+    - Ingest delete: Added `status_code=200` to `/files/{filename}` DELETE
+  - **Test Updates**: Updated 6 tests to match new status codes (201 for uploads, 200 for queries)
+  - **Compliance**: All endpoints now explicitly declare status codes per REST standards
+  - **Test Results**: 231 tests ALL PASSING ✅ (100% success rate)
+  - **Impact**: Phase 5.3 complete → Router layer fully migrated to REST standards
 
 **2026-01-05**:
 

@@ -65,7 +65,8 @@ def get_ingestion_service() -> IngestionService:
     responses={
         200: {"description": "Successful response with file list"},
         500: {"description": "Failed to retrieve files from S3"}
-    }
+    },
+    status_code=200
 )
 async def list_files(
     request: Request,
@@ -132,10 +133,11 @@ async def list_files(
     ```
     """,
     responses={
-        200: {"description": "File uploaded successfully"},
+        201: {"description": "File uploaded successfully"},
         400: {"description": "Invalid file or metadata"},
         500: {"description": "Failed to upload file"}
-    }
+    },
+    status_code=201
 )
 async def upload_file(
     request: Request,
@@ -220,7 +222,8 @@ async def upload_file(
         200: {"description": "File deleted successfully"},
         404: {"description": "File not found"},
         500: {"description": "Failed to delete file"}
-    }
+    },
+    status_code=200
 )
 async def delete_file(
     filename: str,

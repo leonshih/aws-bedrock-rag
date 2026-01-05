@@ -79,7 +79,8 @@ def get_rag_service() -> RAGService:
         },
         400: {"description": "Invalid request (empty query, invalid filters)"},
         500: {"description": "Server error (AWS service unavailable)"}
-    }
+    },
+    status_code=200
 )
 async def query_knowledge_base(
     chat_request: ChatRequest,

@@ -122,7 +122,7 @@ def test_upload_file_success(client, mock_ingestion_service):
     
     response = client.post("/files", files=files, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.json()
     assert data["filename"] == "uploaded.pdf"
     assert data["size"] == 2048000
@@ -138,7 +138,7 @@ def test_upload_file_with_metadata(client, mock_ingestion_service):
     
     response = client.post("/files", files=files, data=data, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
-    assert response.status_code == 200
+    assert response.status_code == 201
     call_args = mock_ingestion_service.upload_document.call_args
     assert call_args[1]["metadata"] == {"category": "research", "year": "2024"}
 
@@ -229,8 +229,8 @@ def test_upload_multiple_files_sequentially(client, mock_ingestion_service):
     response1 = client.post("/files", files=files1, headers={"X-Tenant-ID": TEST_TENANT_ID})
     response2 = client.post("/files", files=files2, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
-    assert response1.status_code == 200
-    assert response2.status_code == 200
+    assert response1.status_code == 201
+    assert response2.status_code == 201
     assert mock_ingestion_service.upload_document.call_count == 2
 
 
@@ -243,7 +243,7 @@ def test_upload_with_empty_metadata(client, mock_ingestion_service):
     response = client.post("/files", files=files, data=data, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
     # Empty string is treated as no metadata (None)
-    assert response.status_code == 200
+    assert response.status_code == 201
     call_args = mock_ingestion_service.upload_document.call_args
     assert call_args[1]["metadata"] is None
 
@@ -257,7 +257,7 @@ def test_upload_with_complex_metadata(client, mock_ingestion_service):
     
     response = client.post("/files", files=files, data=data, headers={"X-Tenant-ID": TEST_TENANT_ID})
     
-    assert response.status_code == 200
+    assert response.status_code == 201
     call_args = mock_ingestion_service.upload_document.call_args
     expected_metadata = {
         "category": "research",

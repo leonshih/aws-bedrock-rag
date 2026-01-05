@@ -72,11 +72,8 @@ class TestChatRouterIntegration:
         assert response.status_code == 200
         
         data = response.json()
-        assert "success" in data
-        assert data["success"] is True
-        assert "data" in data
-        assert "answer" in data["data"]
-        assert "citations" in data["data"]
+        assert "answer" in data
+        assert "citations" in data
 
     def test_chat_endpoint_validation_error(self, client):
         """Test chat endpoint returns 422 for invalid request."""
