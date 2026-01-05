@@ -63,11 +63,9 @@ class TestS3Adapter:
             Body=content
         )
         
-        # Verify response structure
-        assert response["success"] is True
-        data = response["data"]
-        assert data.etag == '"abc123"'
-        assert data.version_id == 'v1'
+        # Verify response (direct DTO access)
+        assert response.etag == '"abc123"'
+        assert response.version_id == 'v1'
     
     def test_upload_file_with_metadata(self, adapter, mock_s3_client):
         """Test file upload with metadata."""
@@ -91,9 +89,9 @@ class TestS3Adapter:
             Metadata=metadata
         )
         
-        assert response["success"] is True
-        assert response["data"].etag == '"def456"'
-        assert response["data"].version_id is None
+        # Direct DTO access
+        assert response.etag == '"def456"'
+        assert response.version_id is None
     
     def test_upload_file_client_error_propagates(self, adapter, mock_s3_client):
         """Test upload_file propagates ClientError."""
@@ -141,15 +139,13 @@ class TestS3Adapter:
             Prefix=prefix
         )
         
-        # Verify response
-        assert response["success"] is True
-        data = response["data"]
-        assert data.total_count == 2
-        assert data.total_size == 3072  # 1024 + 2048
-        assert len(data.objects) == 2
-        assert data.objects[0].key == 'documents/file1.txt'
-        assert data.objects[0].size == 1024
-        assert data.objects[1].key == 'documents/file2.pdf'
+        # Verify response (direct DTO access)
+        assert response.total_count == 2
+        assert response.total_size == 3072  # 1024 + 2048
+        assert len(response.objects) == 2
+        assert response.objects[0].key == 'documents/file1.txt'
+        assert response.objects[0].size == 1024
+        assert response.objects[1].key == 'documents/file2.pdf'
     
     def test_list_files_empty_bucket(self, adapter, mock_s3_client):
         """Test list_files with empty bucket."""
@@ -160,11 +156,10 @@ class TestS3Adapter:
         
         response = adapter.list_files(bucket)
         
-        assert response["success"] is True
-        data = response["data"]
-        assert data.total_count == 0
-        assert data.total_size == 0
-        assert len(data.objects) == 0
+        # Direct DTO access
+        assert response.total_count == 0
+        assert response.total_size == 0
+        assert len(response.objects) == 0
     
     def test_list_files_with_prefix(self, adapter, mock_s3_client):
         """Test list_files filters by prefix."""
@@ -188,8 +183,8 @@ class TestS3Adapter:
         call_args = mock_s3_client.list_objects_v2.call_args[1]
         assert call_args['Prefix'] == prefix
         
-        assert response["success"] is True
-        assert len(response["data"].objects) == 1
+        # Direct DTO access
+        assert len(response.objects) == 1
     
     def test_list_files_client_error_propagates(self, adapter, mock_s3_client):
         """Test list_files propagates ClientError."""
@@ -219,11 +214,9 @@ class TestS3Adapter:
             Key=key
         )
         
-        # Verify response
-        assert response["success"] is True
-        data = response["data"]
-        assert data.deleted is True
-        assert data.key == key
+        # Verify response (direct DTO access)
+        assert response.deleted is True
+        assert response.key == key
     
     def test_delete_file_client_error_propagates(self, adapter, mock_s3_client):
         """Test delete_file propagates ClientError."""

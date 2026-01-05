@@ -1,5 +1,5 @@
 """
-Unit tests for common DTOs (TenantContext, Response wrappers).
+Unit tests for common DTOs (TenantContext, ErrorDetail).
 """
 import pytest
 from uuid import UUID
@@ -9,11 +9,7 @@ from app.dtos.common import (
     TenantContext,
     TenantMissingError,
     TenantValidationError,
-    SuccessResponse,
-    ErrorResponse,
     ErrorDetail,
-    create_success_response,
-    create_error_response,
 )
 
 
@@ -144,89 +140,6 @@ class TestTenantValidationError:
         assert isinstance(error, Exception)
 
 
-class TestSuccessResponse:
-    """Test suite for SuccessResponse generic wrapper."""
-    
-    def test_success_response_with_dict(self):
-        """Test SuccessResponse wraps dict data."""
-        data = {"message": "Operation successful", "count": 42}
-        response = SuccessResponse(data=data)
-        
-        assert response.success is True
-        assert response.data == data
-    
-    def test_success_response_with_pydantic_model(self):
-        """Test SuccessResponse wraps Pydantic model."""
-        tenant = TenantContext(tenant_id="550e8400-e29b-41d4-a716-446655440000")
-        response = SuccessResponse(data=tenant)
-        
-        assert response.success is True
-        assert response.data == tenant
-    
-    def test_success_response_with_list(self):
-        """Test SuccessResponse wraps list data."""
-        data = [1, 2, 3, 4, 5]
-        response = SuccessResponse(data=data)
-        
-        assert response.success is True
-        assert response.data == data
-    
-    def test_success_response_json_serialization(self):
-        """Test SuccessResponse serializes to JSON."""
-        data = {"key": "value"}
-        response = SuccessResponse(data=data)
-        json_str = response.model_dump_json()
-        
-        assert '"success":true' in json_str or '"success": true' in json_str
-        assert '"key":"value"' in json_str or '"key": "value"' in json_str
-    
-    def test_success_default_value(self):
-        """Test success field defaults to True."""
-        response = SuccessResponse(data={"test": "data"})
-        
-        assert response.success is True
-
-
-class TestErrorResponse:
-    """Test suite for ErrorResponse wrapper."""
-    
-    def test_error_response_structure(self):
-        """Test ErrorResponse has correct structure."""
-        error_detail = ErrorDetail(
-            type="ValidationError",
-            message="Invalid input",
-            detail="Field 'email' is required"
-        )
-        response = ErrorResponse(success=False, error=error_detail)
-        
-        assert response.success is False
-        assert response.error.type == "ValidationError"
-        assert response.error.message == "Invalid input"
-        assert response.error.detail == "Field 'email' is required"
-    
-    def test_error_response_without_detail(self):
-        """Test ErrorResponse works without detail field."""
-        error_detail = ErrorDetail(
-            type="NotFoundError",
-            message="Resource not found"
-        )
-        response = ErrorResponse(success=False, error=error_detail)
-        
-        assert response.error.detail is None
-    
-    def test_error_response_json_serialization(self):
-        """Test ErrorResponse serializes to JSON."""
-        error_detail = ErrorDetail(
-            type="ServerError",
-            message="Internal server error"
-        )
-        response = ErrorResponse(success=False, error=error_detail)
-        json_str = response.model_dump_json()
-        
-        assert '"success":false' in json_str or '"success": false' in json_str
-        assert '"type":"ServerError"' in json_str or '"type": "ServerError"' in json_str
-
-
 class TestErrorDetail:
     """Test suite for ErrorDetail model."""
     
@@ -258,50 +171,3 @@ class TestErrorDetail:
         assert "properties" in schema
         assert "type" in schema["properties"]
         assert "message" in schema["properties"]
-
-
-class TestHelperFunctions:
-    """Test suite for helper functions."""
-    
-    def test_create_error_response_basic(self):
-        """Test create_error_response with basic parameters."""
-        response = create_error_response(
-            error_type="validation_error",
-            message="Invalid input"
-        )
-        
-        assert response["success"] is False
-        assert response["error"]["type"] == "validation_error"
-        assert response["error"]["message"] == "Invalid input"
-        assert response["error"]["detail"] is None
-    
-    def test_create_error_response_with_detail(self):
-        """Test create_error_response with detail parameter."""
-        response = create_error_response(
-            error_type="tenant_error",
-            message="Tenant not found",
-            detail="Tenant ID does not exist in database"
-        )
-        
-        assert response["success"] is False
-        assert response["error"]["type"] == "tenant_error"
-        assert response["error"]["message"] == "Tenant not found"
-        assert response["error"]["detail"] == "Tenant ID does not exist in database"
-    
-    def test_create_error_response_structure(self):
-        """Test create_error_response returns correct structure."""
-        response = create_error_response(
-            error_type="test_error",
-            message="Test message"
-        )
-        
-        # Verify top-level structure
-        assert "success" in response
-        assert "error" in response
-        assert len(response) == 2
-        
-        # Verify error object structure
-        assert "type" in response["error"]
-        assert "message" in response["error"]
-        assert "detail" in response["error"]
-        assert len(response["error"]) == 3

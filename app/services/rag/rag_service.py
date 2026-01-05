@@ -55,16 +55,13 @@ class RAGService:
             user_filters=request.metadata_filters
         )
         
-        # Call Bedrock adapter
-        bedrock_response = self.bedrock_adapter.retrieve_and_generate(
+        # Call Bedrock adapter (returns BedrockRAGResult directly)
+        bedrock_result = self.bedrock_adapter.retrieve_and_generate(
             query=request.query,
             kb_id=self.config.BEDROCK_KB_ID,
             model_arn=model_id,  # Pass model_id directly, adapter will handle it
             retrieval_config=retrieval_config
         )
-        
-        # Extract Bedrock result from adapter response
-        bedrock_result = bedrock_response["data"]
         
         # Convert Bedrock references to Citations
         citations = [

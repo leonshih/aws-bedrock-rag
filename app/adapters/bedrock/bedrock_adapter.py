@@ -8,7 +8,6 @@ import boto3
 from botocore.exceptions import ClientError
 
 from app.utils.config import get_config
-from app.dtos.common import create_success_response, SuccessResponse
 from app.dtos.adapters.bedrock import BedrockRAGResult, BedrockRetrievalReference, BedrockIngestionJobResult
 
 
@@ -31,7 +30,7 @@ class BedrockAdapter:
         kb_id: str,
         model_arn: Optional[str] = None,
         retrieval_config: Optional[Dict[str, dict]] = None
-    ) -> SuccessResponse[BedrockRAGResult]:
+    ) -> BedrockRAGResult:
         """
         Perform RAG query using Bedrock Knowledge Base.
         
@@ -42,7 +41,7 @@ class BedrockAdapter:
             retrieval_config: Optional retrieval configuration (e.g., metadata filters)
         
         Returns:
-            Dict with success flag and BedrockRAGResult data containing answer, session_id, and references.
+            BedrockRAGResult containing answer, session_id, and references.
         
         Raises:
             ClientError: If AWS API call fails.
@@ -91,7 +90,7 @@ class BedrockAdapter:
                 session_id=session_id,
                 references=references
             )
-            return create_success_response(result)
+            return result
         except ClientError as e:
             raise e
     
@@ -99,7 +98,7 @@ class BedrockAdapter:
         self,
         kb_id: str,
         data_source_id: str
-    ) -> SuccessResponse[BedrockIngestionJobResult]:
+    ) -> BedrockIngestionJobResult:
         """
         Start a Knowledge Base ingestion job (sync).
         
@@ -108,7 +107,7 @@ class BedrockAdapter:
             data_source_id: Data Source ID
         
         Returns:
-            Dict with success flag and BedrockIngestionJobResult data.
+            BedrockIngestionJobResult with job details.
         
         Raises:
             ClientError: If AWS API call fails.
@@ -130,6 +129,6 @@ class BedrockAdapter:
                 knowledge_base_id=job_info.get('knowledgeBaseId', kb_id),
                 data_source_id=job_info.get('dataSourceId', data_source_id)
             )
-            return create_success_response(result)
+            return result
         except ClientError as e:
             raise e

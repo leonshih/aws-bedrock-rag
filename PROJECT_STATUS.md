@@ -52,7 +52,7 @@
 - [x] **Tenant-aware API documentation** (OpenAPI docs with X-Tenant-ID header requirements)
 - [x] **Multi-tenant integration test coverage** (15 comprehensive tests)
 
-### ⏳ Phase 5: Response Format Refactoring (In Progress - 0% Complete)
+### ⏳ Phase 5: Response Format Refactoring (In Progress - 20% Complete)
 
 **Objective:** Migrate from wrapper pattern `{"success": bool, "data": T}` to REST standard (direct Pydantic Model + HTTP Status Codes)
 
@@ -66,11 +66,12 @@
 
 **Implementation Checklist:**
 
-1. **Core DTOs Removal** (1 file)
+1. **Core DTOs Removal** ✅ (1 file)
 
-   - [ ] Remove `SuccessResponse[T]` and `ErrorResponse` from `app/dtos/common.py`
-   - [ ] Remove helper functions `create_success_response()` and `create_error_response()`
-   - [ ] Keep domain-specific DTOs (TenantContext, ErrorDetail, etc.)
+   - [x] Remove `SuccessResponse[T]` and `ErrorResponse` from `app/dtos/common.py`
+   - [x] Remove helper functions `create_success_response()` and `create_error_response()`
+   - [x] Keep domain-specific DTOs (TenantContext, ErrorDetail, etc.)
+   - [x] **Architecture Fix**: Refactored Adapter layer (Bedrock, S3) to return Domain DTOs directly (removed wrapper leakage)
 
 2. **Service Layer Refactoring** (2 files)
 
@@ -110,33 +111,33 @@
 
 ## 📈 Test Coverage
 
-**Total Tests:** 242 tests (ALL PASSING ✅)  
+**Total Tests:** 231 tests (ALL PASSING ✅)  
 **Overall Coverage:** 🎯 **99%**
 
 ### Coverage by Module (Source Code)
 
-| Module                          | File Path                              | Coverage | Uncovered Lines                            |
-| ------------------------------- | -------------------------------------- | -------- | ------------------------------------------ |
-| **Adapters** (avg: 100%)        |                                        |          |                                            |
-| └─ Bedrock Adapter              | `app/adapters/bedrock/`                | 100%     | ✅ Full coverage                           |
-| └─ S3 Adapter                   | `app/adapters/s3/`                     | 100%     | ✅ Full coverage                           |
-| **DTOs** (avg: 99%)             |                                        |          |                                            |
-| └─ Common Models                | `app/dtos/common.py`                   | 98%      | 1 line (edge case)                         |
-| └─ Router DTOs                  | `app/dtos/routers/`                    | 100%     | ✅ Full coverage                           |
-| └─ Adapter DTOs                 | `app/dtos/adapters/`                   | 100%     | ✅ Full coverage                           |
-| **Services** (avg: 99%)         |                                        |          |                                            |
-| └─ RAG Service                  | `app/services/rag/`                    | 98%      | 1 line (edge case)                         |
-| └─ Ingestion Service            | `app/services/ingestion/`              | 100%     | ✅ Full coverage                           |
-| **Routers** (avg: 100%)         |                                        |          |                                            |
-| └─ Chat Router                  | `app/routers/chat/`                    | 100%     | ✅ Full coverage                           |
-| └─ Ingest Router                | `app/routers/ingest/`                  | 100%     | ✅ Full coverage                           |
-| **Middleware** (avg: 95%)       |                                        |          |                                            |
-| └─ Exception Handlers           | `app/middleware/exception_handlers.py` | 100%     | ✅ Full coverage                           |
-| └─ Tenant Middleware            | `app/middleware/tenant_middleware.py`  | 91%      | 3 lines (excluded paths edge case)         |
-| **Application Core** (avg: 97%) |                                        |          |                                            |
-| └─ Main Application             | `app/main.py`                          | 97%      | 1 line (`if __name__ == "__main__"`)       |
-| └─ Config Utils                 | `app/utils/config.py`                  | 100%     | ✅ Full coverage                           |
-| **Integration Tests** (avg: 98%)| `app/tests/integration/`               | 98%      | 4 lines (smoke test endpoints)             |
+| Module                           | File Path                              | Coverage | Uncovered Lines                      |
+| -------------------------------- | -------------------------------------- | -------- | ------------------------------------ |
+| **Adapters** (avg: 100%)         |                                        |          |                                      |
+| └─ Bedrock Adapter               | `app/adapters/bedrock/`                | 100%     | ✅ Full coverage                     |
+| └─ S3 Adapter                    | `app/adapters/s3/`                     | 100%     | ✅ Full coverage                     |
+| **DTOs** (avg: 99%)              |                                        |          |                                      |
+| └─ Common Models                 | `app/dtos/common.py`                   | 96%      | 1 line (edge case)                   |
+| └─ Router DTOs                   | `app/dtos/routers/`                    | 100%     | ✅ Full coverage                     |
+| └─ Adapter DTOs                  | `app/dtos/adapters/`                   | 100%     | ✅ Full coverage                     |
+| **Services** (avg: 99%)          |                                        |          |                                      |
+| └─ RAG Service                   | `app/services/rag/`                    | 98%      | 1 line (edge case)                   |
+| └─ Ingestion Service             | `app/services/ingestion/`              | 100%     | ✅ Full coverage                     |
+| **Routers** (avg: 100%)          |                                        |          |                                      |
+| └─ Chat Router                   | `app/routers/chat/`                    | 100%     | ✅ Full coverage                     |
+| └─ Ingest Router                 | `app/routers/ingest/`                  | 100%     | ✅ Full coverage                     |
+| **Middleware** (avg: 95%)        |                                        |          |                                      |
+| └─ Exception Handlers            | `app/middleware/exception_handlers.py` | 100%     | ✅ Full coverage                     |
+| └─ Tenant Middleware             | `app/middleware/tenant_middleware.py`  | 91%      | 3 lines (excluded paths edge case)   |
+| **Application Core** (avg: 97%)  |                                        |          |                                      |
+| └─ Main Application              | `app/main.py`                          | 97%      | 1 line (`if __name__ == "__main__"`) |
+| └─ Config Utils                  | `app/utils/config.py`                  | 100%     | ✅ Full coverage                     |
+| **Integration Tests** (avg: 98%) | `app/tests/integration/`               | 98%      | 4 lines (smoke test endpoints)       |
 
 ---
 

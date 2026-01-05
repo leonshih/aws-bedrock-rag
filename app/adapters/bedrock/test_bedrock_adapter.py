@@ -79,18 +79,16 @@ class TestBedrockAdapter:
         assert call_args['input']['text'] == query
         assert call_args['retrieveAndGenerateConfiguration']['knowledgeBaseConfiguration']['knowledgeBaseId'] == kb_id
         
-        # Verify response structure
-        assert response["success"] is True
-        data = response["data"]
-        assert data.answer == 'AWS Bedrock is a fully managed service.'
-        assert data.session_id == 'session-123'
-        assert len(data.references) == 2
+        # Verify response structure (direct DTO access)
+        assert response.answer == 'AWS Bedrock is a fully managed service.'
+        assert response.session_id == 'session-123'
+        assert len(response.references) == 2
         
         # Verify references
-        assert data.references[0].content == 'Reference content 1'
-        assert data.references[0].s3_uri == 's3://bucket/doc1.pdf'
-        assert data.references[0].score == 0.95
-        assert data.references[1].score == 0.88
+        assert response.references[0].content == 'Reference content 1'
+        assert response.references[0].s3_uri == 's3://bucket/doc1.pdf'
+        assert response.references[0].score == 0.95
+        assert response.references[1].score == 0.88
     
     def test_retrieve_and_generate_with_custom_model_arn(self, adapter, mock_bedrock_runtime_client):
         """Test retrieve_and_generate uses custom model ARN when provided."""
@@ -164,10 +162,9 @@ class TestBedrockAdapter:
         
         response = adapter.retrieve_and_generate(query, kb_id)
         
-        assert response["success"] is True
-        data = response["data"]
-        assert data.answer == 'Answer without citations'
-        assert len(data.references) == 0
+        # Direct DTO access
+        assert response.answer == 'Answer without citations'
+        assert len(response.references) == 0
     
     def test_retrieve_and_generate_handles_missing_score(self, adapter, mock_bedrock_runtime_client):
         """Test retrieve_and_generate handles references without score."""
@@ -192,10 +189,9 @@ class TestBedrockAdapter:
         
         response = adapter.retrieve_and_generate(query, kb_id)
         
-        assert response["success"] is True
-        data = response["data"]
-        assert len(data.references) == 1
-        assert data.references[0].score is None
+        # Direct DTO access
+        assert len(response.references) == 1
+        assert response.references[0].score is None
     
     def test_retrieve_and_generate_client_error_propagates(self, adapter, mock_bedrock_runtime_client):
         """Test retrieve_and_generate propagates ClientError."""
@@ -242,13 +238,11 @@ class TestBedrockAdapter:
             dataSourceId=data_source_id
         )
         
-        # Verify response
-        assert response["success"] is True
-        data = response["data"]
-        assert data.job_id == 'job-123'
-        assert data.status == 'STARTING'
-        assert data.knowledge_base_id == kb_id
-        assert data.data_source_id == data_source_id
+        # Verify response (direct DTO access)
+        assert response.job_id == 'job-123'
+        assert response.status == 'STARTING'
+        assert response.knowledge_base_id == kb_id
+        assert response.data_source_id == data_source_id
     
     def test_start_ingestion_job_client_error_propagates(self):
         """Test start_ingestion_job propagates ClientError."""

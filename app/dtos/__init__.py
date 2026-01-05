@@ -4,7 +4,7 @@ Data Transfer Objects (DTOs)
 Pydantic models for type-safe data validation and serialization.
 
 Structure:
-- common.py: Base response wrappers (SuccessResponse, ErrorResponse)
+- common.py: Common models (TenantContext, ErrorDetail, Exception classes)
 - routers/: Router layer DTOs
   - chat/: Chat/RAG related DTOs
   - ingest/: File management DTOs
@@ -13,11 +13,10 @@ Structure:
   - bedrock/: Bedrock adapter DTOs
 """
 from .common import (
-    SuccessResponse,
-    ErrorResponse,
+    TenantContext,
+    TenantMissingError,
+    TenantValidationError,
     ErrorDetail,
-    create_success_response,
-    create_error_response,
 )
 from .routers.chat import ChatRequest, ChatResponse, Citation, MetadataFilter
 from .routers.ingest import (
@@ -51,12 +50,11 @@ __all__ = [
     "FileResponse",
     "FileListResponse",
     "FileDeleteResponse",
-    # Common response wrappers
-    "SuccessResponse",
-    "ErrorResponse",
+    # Common models
+    "TenantContext",
+    "TenantMissingError",
+    "TenantValidationError",
     "ErrorDetail",
-    "create_success_response",
-    "create_error_response",
     # S3 adapter DTOs
     "S3UploadResult",
     "S3ObjectInfo",

@@ -111,14 +111,13 @@ class IngestionService:
         prefix = f"documents/{tenant_id}/"
         logger.info(f"Listing documents for tenant {tenant_id} with prefix: {prefix}")
         
-        # List all objects in the bucket with the tenant prefix
-        s3_response = self.s3_adapter.list_files(
+        # List all objects in the bucket with the tenant prefix (returns S3ListResult directly)
+        s3_list_result = self.s3_adapter.list_files(
             bucket=self.bucket_name,
             prefix=prefix
         )
         
-        # Extract S3 objects from adapter response
-        s3_list_result = s3_response["data"]
+        # Extract S3 objects from adapter result
         s3_objects = s3_list_result.objects
         
         # Filter out .metadata.json files and build FileResponse objects

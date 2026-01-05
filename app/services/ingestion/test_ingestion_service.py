@@ -139,10 +139,7 @@ class TestIngestionService:
         from app.dtos.adapters.s3 import S3ListResult
         
         mock_s3 = Mock()
-        mock_s3.list_files.return_value = {
-            "success": True,
-            "data": S3ListResult(objects=[], total_count=0, total_size=0)
-        }
+        mock_s3.list_files.return_value = S3ListResult(objects=[], total_count=0, total_size=0)
         mock_s3_adapter_class.return_value = mock_s3
         mock_bedrock_adapter_class.return_value = Mock()
         
@@ -161,27 +158,24 @@ class TestIngestionService:
         from app.dtos.adapters.s3 import S3ListResult, S3ObjectInfo
         
         mock_s3 = Mock()
-        mock_s3.list_files.return_value = {
-            "success": True,
-            "data": S3ListResult(
-                objects=[
-                    S3ObjectInfo(
-                        key=f"documents/{TEST_TENANT_ID}/doc1.pdf",
-                        size=1024,
-                        last_modified="2023-12-01T00:00:00",
-                        etag="etag1"
-                    ),
-                    S3ObjectInfo(
-                        key=f"documents/{TEST_TENANT_ID}/doc2.pdf",
-                        size=2048,
-                        last_modified="2023-12-02T00:00:00",
-                        etag="etag2"
-                    )
-                ],
-                total_count=2,
-                total_size=3072
-            )
-        }
+        mock_s3.list_files.return_value = S3ListResult(
+            objects=[
+                S3ObjectInfo(
+                    key=f"documents/{TEST_TENANT_ID}/doc1.pdf",
+                    size=1024,
+                    last_modified="2023-12-01T00:00:00",
+                    etag="etag1"
+                ),
+                S3ObjectInfo(
+                    key=f"documents/{TEST_TENANT_ID}/doc2.pdf",
+                    size=2048,
+                    last_modified="2023-12-02T00:00:00",
+                    etag="etag2"
+                )
+            ],
+            total_count=2,
+            total_size=3072
+        )
         mock_s3_adapter_class.return_value = mock_s3
         mock_bedrock_adapter_class.return_value = Mock()
         
@@ -202,27 +196,24 @@ class TestIngestionService:
         from app.dtos.adapters.s3 import S3ListResult, S3ObjectInfo
         
         mock_s3 = Mock()
-        mock_s3.list_files.return_value = {
-            "success": True,
-            "data": S3ListResult(
-                objects=[
-                    S3ObjectInfo(
-                        key=f"documents/{TEST_TENANT_ID}/doc1.pdf",
-                        size=1024,
-                        last_modified="2023-12-01T00:00:00",
-                        etag="etag1"
-                    ),
-                    S3ObjectInfo(
-                        key=f"documents/{TEST_TENANT_ID}/doc1.pdf.metadata.json",
-                        size=256,
-                        last_modified="2023-12-01T00:00:00",
-                        etag="etag2"
-                    )
-                ],
-                total_count=2,
-                total_size=1280
-            )
-        }
+        mock_s3.list_files.return_value = S3ListResult(
+            objects=[
+                S3ObjectInfo(
+                    key=f"documents/{TEST_TENANT_ID}/doc1.pdf",
+                    size=1024,
+                    last_modified="2023-12-01T00:00:00",
+                    etag="etag1"
+                ),
+                S3ObjectInfo(
+                    key=f"documents/{TEST_TENANT_ID}/doc1.pdf.metadata.json",
+                    size=256,
+                    last_modified="2023-12-01T00:00:00",
+                    etag="etag2"
+                )
+            ],
+            total_count=2,
+            total_size=1280
+        )
         mock_s3.get_file.return_value = json.dumps({
             "metadataAttributes": {"author": "Dr. Smith"}
         }).encode('utf-8')

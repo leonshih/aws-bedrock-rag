@@ -8,7 +8,6 @@ import boto3
 from botocore.exceptions import ClientError
 
 from app.utils.config import get_config
-from app.dtos.common import create_success_response, SuccessResponse
 from app.dtos.adapters.s3 import S3UploadResult, S3ObjectInfo, S3ListResult, S3DeleteResult
 
 
@@ -27,7 +26,7 @@ class S3Adapter:
         bucket: str,
         key: str,
         metadata: Optional[Dict[str, str]] = None
-    ) -> SuccessResponse[S3UploadResult]:
+    ) -> S3UploadResult:
         """
         Upload a file to S3.
         
@@ -38,7 +37,7 @@ class S3Adapter:
             metadata: Optional metadata dictionary
         
         Returns:
-            Dict with success flag and S3UploadResult data containing ETag and version ID.
+            S3UploadResult containing ETag and version ID.
         
         Raises:
             ClientError: If AWS API call fails.
@@ -59,7 +58,7 @@ class S3Adapter:
                 etag=response.get('ETag', ''),
                 version_id=response.get('VersionId')
             )
-            return create_success_response(result)
+            return result
         except ClientError as e:
             raise e
     
@@ -67,7 +66,7 @@ class S3Adapter:
         self,
         bucket: str,
         prefix: str = ""
-    ) -> SuccessResponse[S3ListResult]:
+    ) -> S3ListResult:
         """
         List files in S3 bucket.
         
@@ -76,7 +75,7 @@ class S3Adapter:
             prefix: Optional prefix to filter objects
         
         Returns:
-            Dict with success flag and S3ListResult data containing list of objects with metadata.
+            S3ListResult containing list of objects with metadata.
         
         Raises:
             ClientError: If AWS API call fails.
@@ -107,7 +106,7 @@ class S3Adapter:
                 total_count=len(objects),
                 total_size=total_size
             )
-            return create_success_response(result)
+            return result
         except ClientError as e:
             raise e
     
@@ -115,7 +114,7 @@ class S3Adapter:
         self,
         bucket: str,
         key: str
-    ) -> SuccessResponse[S3DeleteResult]:
+    ) -> S3DeleteResult:
         """
         Delete a file from S3.
         
@@ -124,7 +123,7 @@ class S3Adapter:
             key: S3 object key (file path)
         
         Returns:
-            Dict with success flag and S3DeleteResult data.
+            S3DeleteResult with deletion status.
         
         Raises:
             ClientError: If AWS API call fails.
@@ -139,6 +138,6 @@ class S3Adapter:
                 deleted=True,
                 key=key
             )
-            return create_success_response(result)
+            return result
         except ClientError as e:
             raise e

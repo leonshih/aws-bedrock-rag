@@ -47,16 +47,13 @@ class TestRAGService:
         """Test basic query without filters."""
         from app.dtos.adapters.bedrock import BedrockRAGResult
         
-        # Setup mock adapter
+        # Setup mock adapter (returns BedrockRAGResult directly)
         mock_adapter = Mock()
-        mock_adapter.retrieve_and_generate.return_value = {
-            "success": True,
-            "data": BedrockRAGResult(
-                answer="This is the answer.",
-                session_id="session-123",
-                references=[]
-            )
-        }
+        mock_adapter.retrieve_and_generate.return_value = BedrockRAGResult(
+            answer="This is the answer.",
+            session_id="session-123",
+            references=[]
+        )
         mock_bedrock_adapter_class.return_value = mock_adapter
         
         # Create service and make request
@@ -87,14 +84,11 @@ class TestRAGService:
         from app.dtos.adapters.bedrock import BedrockRAGResult
         
         mock_adapter = Mock()
-        mock_adapter.retrieve_and_generate.return_value = {
-            "success": True,
-            "data": BedrockRAGResult(
-                answer="Answer",
-                session_id="session-456",
-                references=[]
-            )
-        }
+        mock_adapter.retrieve_and_generate.return_value = BedrockRAGResult(
+            answer="Answer",
+            session_id="session-456",
+            references=[]
+        )
         mock_bedrock_adapter_class.return_value = mock_adapter
         
         service = RAGService(config=mock_config)
@@ -215,20 +209,17 @@ class TestRAGService:
         from app.dtos.adapters.bedrock import BedrockRAGResult, BedrockRetrievalReference
         
         mock_adapter = Mock()
-        mock_adapter.retrieve_and_generate.return_value = {
-            "success": True,
-            "data": BedrockRAGResult(
-                answer="Filtered answer.",
-                session_id="session-789",
-                references=[
-                    BedrockRetrievalReference(
-                        content="Source text",
-                        s3_uri="s3://bucket/doc.pdf",
-                        score=0.85
-                    )
-                ]
-            )
-        }
+        mock_adapter.retrieve_and_generate.return_value = BedrockRAGResult(
+            answer="Filtered answer.",
+            session_id="session-789",
+            references=[
+                BedrockRetrievalReference(
+                    content="Source text",
+                    s3_uri="s3://bucket/doc.pdf",
+                    score=0.85
+                )
+            ]
+        )
         mock_bedrock_adapter_class.return_value = mock_adapter
         
         service = RAGService(config=mock_config)
@@ -255,14 +246,11 @@ class TestRAGService:
         from app.dtos.adapters.bedrock import BedrockRAGResult
         
         mock_adapter = Mock()
-        mock_adapter.retrieve_and_generate.return_value = {
-            "success": True,
-            "data": BedrockRAGResult(
-                answer="Tenant-filtered answer.",
-                session_id="session-tenant-1",
-                references=[]
-            )
-        }
+        mock_adapter.retrieve_and_generate.return_value = BedrockRAGResult(
+            answer="Tenant-filtered answer.",
+            session_id="session-tenant-1",
+            references=[]
+        )
         mock_bedrock_adapter_class.return_value = mock_adapter
         
         service = RAGService(config=mock_config)
@@ -290,14 +278,11 @@ class TestRAGService:
         from app.dtos.adapters.bedrock import BedrockRAGResult
         
         mock_adapter = Mock()
-        mock_adapter.retrieve_and_generate.return_value = {
-            "success": True,
-            "data": BedrockRAGResult(
-                answer="Multi-filtered answer.",
-                session_id="session-multi-1",
-                references=[]
-            )
-        }
+        mock_adapter.retrieve_and_generate.return_value = BedrockRAGResult(
+            answer="Multi-filtered answer.",
+            session_id="session-multi-1",
+            references=[]
+        )
         mock_bedrock_adapter_class.return_value = mock_adapter
         
         service = RAGService(config=mock_config)

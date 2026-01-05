@@ -289,15 +289,18 @@ class TestMultiTenantRAGQueryFiltering:
     @patch('app.adapters.bedrock.bedrock_adapter.boto3.client')
     def test_tenant_filter_always_present_in_retrieval_config(self, mock_boto_client):
         """Test that tenant filter is always injected at service layer."""
+        from app.dtos.adapters.bedrock import BedrockRAGResult
+        
         config = Config()
         service = RAGService(config=config)
         
-        # Mock Bedrock adapter
+        # Mock Bedrock adapter (returns BedrockRAGResult directly)
         mock_adapter = Mock()
-        mock_adapter.retrieve_and_generate.return_value = {
-            "success": True,
-            "data": Mock(answer="Test", session_id="sess-1", references=[])
-        }
+        mock_adapter.retrieve_and_generate.return_value = BedrockRAGResult(
+            answer="Test",
+            session_id="sess-1",
+            references=[]
+        )
         service.bedrock_adapter = mock_adapter
         
         # Query without user filters
