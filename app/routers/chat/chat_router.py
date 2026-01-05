@@ -104,5 +104,10 @@ async def query_knowledge_base(
     tenant_context = get_tenant_context(fastapi_request)
     
     # Pass tenant_id as separate parameter to service layer
-    response = rag_service.query(chat_request, tenant_id=tenant_context.tenant_id)
-    return response
+    chat_response = rag_service.query(chat_request, tenant_id=tenant_context.tenant_id)
+    
+    # Wrap response (will be removed in Phase 5.3)
+    return {
+        "success": True,
+        "data": chat_response
+    }

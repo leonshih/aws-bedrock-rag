@@ -61,15 +61,12 @@ class TestRAGService:
         request = ChatRequest(query="What is aspirin?")
         response = service.query(request, tenant_id=TEST_TENANT_ID)
         
-        # Verify response structure
-        assert isinstance(response, dict)
-        assert response["success"] is True
-        assert "data" in response
-        assert isinstance(response["data"], ChatResponse)
-        assert response["data"].answer == "This is the answer."
-        assert response["data"].session_id == "session-123"
-        assert response["data"].model_used == mock_config.BEDROCK_MODEL_ID
-        assert response["data"].citations == []
+        # Verify response structure (direct ChatResponse)
+        assert isinstance(response, ChatResponse)
+        assert response.answer == "This is the answer."
+        assert response.session_id == "session-123"
+        assert response.model_used == mock_config.BEDROCK_MODEL_ID
+        assert response.citations == []
         
         # Verify adapter was called correctly
         mock_adapter.retrieve_and_generate.assert_called_once()
@@ -98,8 +95,8 @@ class TestRAGService:
         )
         response = service.query(request, tenant_id=TEST_TENANT_ID)
         
-        assert response["success"] is True
-        assert response["data"].model_used == "anthropic.claude-3-haiku-20240307-v1:0"
+        assert isinstance(response, ChatResponse)
+        assert response.model_used == "anthropic.claude-3-haiku-20240307-v1:0"
         call_kwargs = mock_adapter.retrieve_and_generate.call_args[1]
         assert "anthropic.claude-3-haiku-20240307-v1:0" in call_kwargs["model_arn"]
     
@@ -231,9 +228,9 @@ class TestRAGService:
         )
         response = service.query(request, tenant_id=TEST_TENANT_ID)
         
-        assert response["success"] is True
-        assert response["data"].answer == "Filtered answer."
-        assert len(response["data"].citations) == 1
+        assert isinstance(response, ChatResponse)
+        assert response.answer == "Filtered answer."
+        assert len(response.citations) == 1
         
         # Verify retrieval_config was passed
         call_kwargs = mock_adapter.retrieve_and_generate.call_args[1]
@@ -258,7 +255,7 @@ class TestRAGService:
         response = service.query(request, tenant_id=TEST_TENANT_ID)
         
         # Verify response
-        assert response["success"] is True
+        assert isinstance(response, ChatResponse)
         
         # Verify tenant filter was injected
         call_kwargs = mock_adapter.retrieve_and_generate.call_args[1]
@@ -296,7 +293,7 @@ class TestRAGService:
         response = service.query(request, tenant_id=TEST_TENANT_ID)
         
         # Verify response
-        assert response["success"] is True
+        assert isinstance(response, ChatResponse)
         
         # Verify filters are combined with AND logic
         call_kwargs = mock_adapter.retrieve_and_generate.call_args[1]

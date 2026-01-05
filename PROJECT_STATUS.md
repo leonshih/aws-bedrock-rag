@@ -75,7 +75,7 @@
 
 2. **Service Layer Refactoring** (2 files)
 
-   - [ ] Refactor `RAGService.query()` to return `ChatResponse` directly (remove wrapper)
+   - [x] Refactor `RAGService.query()` to return `ChatResponse` directly (remove wrapper)
    - [ ] Refactor `IngestionService.upload_document()` to return `FileUploadResponse` directly
    - [ ] Refactor `IngestionService.list_documents()` to return `FileListResponse` directly
    - [ ] Refactor `IngestionService.delete_document()` to return `DeleteFileResponse` directly

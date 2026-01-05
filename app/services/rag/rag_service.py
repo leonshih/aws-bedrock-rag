@@ -31,7 +31,7 @@ class RAGService:
         self,
         request: ChatRequest,
         tenant_id: UUID
-    ) -> dict:
+    ) -> ChatResponse:
         """
         Process a RAG query using Bedrock Knowledge Base.
         
@@ -40,7 +40,7 @@ class RAGService:
             tenant_id: Tenant identifier (extracted from X-Tenant-ID header by middleware)
             
         Returns:
-            Dict with success flag and ChatResponse data
+            ChatResponse with answer, citations, session_id, and model_used
         """
         logger.info(f"Processing RAG query for tenant {tenant_id}: '{request.query[:100]}...', filters={len(request.metadata_filters or [])}, max_results={request.max_results}")
         
@@ -74,15 +74,12 @@ class RAGService:
             for ref in bedrock_result.references
         ]
         
-        return {
-            "success": True,
-            "data": ChatResponse(
-                answer=bedrock_result.answer,
-                citations=citations,
-                session_id=bedrock_result.session_id,
-                model_used=model_id
-            )
-        }
+        return ChatResponse(
+            answer=bedrock_result.answer,
+            citations=citations,
+            session_id=bedrock_result.session_id,
+            model_used=model_id
+        )
     
     def _build_retrieval_config_with_tenant(
         self,

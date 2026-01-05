@@ -16,22 +16,19 @@ TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440000"
 def mock_rag_service():
     """Create a mock RAG service."""
     service = Mock()
-    service.query.return_value = {
-        "success": True,
-        "data": ChatResponse(
-            answer="This is a test answer about RAG systems.",
-            citations=[
-                Citation(
-                    content="RAG combines retrieval and generation.",
-                    document_title="test-doc.pdf",
-                    location={"s3Location": {"uri": "s3://test-bucket/test-doc.pdf"}},
-                    score=0.95
-                )
-            ],
-            session_id="test-session-123",
-            model_used="anthropic.claude-3-5-sonnet-20241022-v2:0"
-        )
-    }
+    service.query.return_value = ChatResponse(
+        answer="This is a test answer about RAG systems.",
+        citations=[
+            Citation(
+                content="RAG combines retrieval and generation.",
+                document_title="test-doc.pdf",
+                location={"s3Location": {"uri": "s3://test-bucket/test-doc.pdf"}},
+                score=0.95
+            )
+        ],
+        session_id="test-session-123",
+        model_used="anthropic.claude-3-5-sonnet-20241022-v2:0"
+    )
     return service
 
 
