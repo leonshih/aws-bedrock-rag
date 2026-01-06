@@ -55,7 +55,7 @@ def get_ingestion_service() -> IngestionService:
                 "filename": "document.pdf",
                 "size": 1024000,
                 "last_modified": "2024-01-15T10:30:00Z",
-                "s3_key": "documents/document.pdf",
+                "s3_key": "documents/550e8400-e29b-41d4-a716-446655440000/document.pdf",
                 "metadata": {"category": "research", "year": "2024"}
             }
         ],
