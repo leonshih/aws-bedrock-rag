@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-01-06  
-**Current Phase:** Phase 6 (Containerization & Deployment) - NOT STARTED  
+**Current Phase:** Phase 6 (Bug Fixes & Enhancements) - IN PROGRESS  
 **Overall Progress:** ~99% Complete
 
 ---
@@ -166,11 +166,28 @@
 
 **Test Results:** 237 tests passing (6 new dependency tests added)
 
+### ✅ Phase 6: Bug Fixes & Enhancements (50% Complete) 🔧
+
+**Objective:** Address production testing issues and API documentation improvements
+
+**Implementation Checklist:**
+
+1. **File Upload Security** ✅ (3 files)
+   - [x] Add file extension validation in upload endpoint
+   - [x] Define allowed file extensions (.pdf, .txt, .doc, .docx, .md, .csv, .json, .xml, .html, .rtf, .odt, .xls, .xlsx, .ppt, .pptx)
+   - [x] Reject files without extensions
+   - [x] Case-insensitive extension validation
+   - [x] Update API documentation with allowed formats
+   - [x] Add 4 test cases for extension validation
+
+2. **API Documentation Fix** (1 file)
+   - [ ] Fix List Documents API example - s3_key should include tenant_id prefix (`documents/{tenant_id}/`)
+
 ---
 
 ## 📈 Test Coverage
 
-**Total Tests:** 237 tests (ALL PASSING ✅)  
+**Total Tests:** 241 tests (ALL PASSING ✅)  
 **Overall Coverage:** 🎯 **99%**
 
 ### Coverage by Module (Source Code)
@@ -180,8 +197,8 @@
 | **Adapters** (avg: 100%)         |                                        |          |                                      |
 | └─ Bedrock Adapter               | `app/adapters/bedrock/`                | 100%     | ✅ Full coverage                     |
 | └─ S3 Adapter                    | `app/adapters/s3/`                     | 100%     | ✅ Full coverage                     |
-| **Dependencies** (avg: 100%)     |                                        |          |                                      |
-| └─ Tenant Dependency             | `app/dependencies/tenant.py`           | 100%     | ✅ Full coverage                     |
+| **Dependencies** (avg: 71%)     |                                        |          |                                      |
+| └─ Tenant Dependency             | `app/dependencies/tenant.py`           | 71%      | 5 lines (error handling paths)       |
 | **DTOs** (avg: 99%)              |                                        |          |                                      |
 | └─ Common Models                 | `app/dtos/common.py`                   | 96%      | 1 line (edge case)                   |
 | └─ Router DTOs                   | `app/dtos/routers/`                    | 100%     | ✅ Full coverage                     |
@@ -189,9 +206,9 @@
 | **Services** (avg: 99%)          |                                        |          |                                      |
 | └─ RAG Service                   | `app/services/rag/`                    | 98%      | 1 line (edge case)                   |
 | └─ Ingestion Service             | `app/services/ingestion/`              | 100%     | ✅ Full coverage                     |
-| **Routers** (avg: 100%)          |                                        |          |                                      |
+| **Routers** (avg: 99%)           |                                        |          |                                      |
 | └─ Chat Router                   | `app/routers/chat/`                    | 100%     | ✅ Full coverage                     |
-| └─ Ingest Router                 | `app/routers/ingest/`                  | 100%     | ✅ Full coverage                     |
+| └─ Ingest Router                 | `app/routers/ingest/`                  | 98%      | 1 line (edge case)                   |
 | **Middleware** (avg: 95%)        |                                        |          |                                      |
 | └─ Exception Handlers            | `app/middleware/exception_handlers.py` | 100%     | ✅ Full coverage                     |
 | └─ Tenant Middleware             | `app/middleware/tenant_middleware.py`  | 91%      | 3 lines (excluded paths edge case)   |

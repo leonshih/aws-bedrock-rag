@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from typing import Annotated, Optional
 import json
+import os
 
 from app.dtos.routers.ingest import FileResponse, FileListResponse, FileDeleteResponse, FileMetadata
 from app.dtos.common import TenantContext
@@ -103,7 +104,8 @@ async def list_files(
     - `X-Tenant-ID`: Your tenant UUID (e.g., "550e8400-e29b-41d4-a716-446655440000")
     
     **Features:**
-    - Accepts any file type (PDF, TXT, DOCX, etc.)
+    - Accepts common document formats (PDF, TXT, DOC, DOCX, MD, CSV, JSON, XML, HTML, RTF, ODT, XLS, XLSX, PPT, PPTX)
+    - Files without extensions are rejected
     - Optional custom metadata (JSON format)
     - Automatically triggers Knowledge Base sync
     - Tenant-isolated storage (documents/{tenant_id}/)
@@ -156,8 +158,35 @@ async def upload_file(
         FileResponse with file details
         
     Raises:
-        HTTPException: 400 for invalid input, 500 for server errors
+        HTTPException: 400 for invalid input (invalid extension, missing extension, invalid metadata), 500 for server errors
     """
+    # Validate file extension
+    config = Config()
+    if not file.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Filename is required"
+        )
+    
+    # Extract file extension (case-insensitive)
+    _, file_extension = os.path.splitext(file.filename)
+    file_extension_lower = file_extension.lower()
+    
+    # Check if file has an extension
+    if not file_extension_lower:
+        raise HTTPException(
+            status_code=400,
+            detail="File must have a valid extension. Allowed extensions: .pdf, .txt, .doc, .docx, .md, .csv, .json, .xml, .html, .htm, .rtf, .odt, .xls, .xlsx, .ppt, .pptx"
+        )
+    
+    # Check if extension is allowed
+    if file_extension_lower not in config.ALLOWED_FILE_EXTENSIONS:
+        allowed_exts = ", ".join(sorted(config.ALLOWED_FILE_EXTENSIONS))
+        raise HTTPException(
+            status_code=400,
+            detail=f"File extension '{file_extension}' is not allowed. Allowed extensions: {allowed_exts}"
+        )
+    
     # Read file content
     file_content = await file.read()
     

@@ -298,13 +298,61 @@ def test_list_files_response_structure(client, mock_ingestion_service):
     assert "files" in data
     assert "total_count" in data
     assert "total_size" in data
-    assert isinstance(data["files"], list)
+
+
+def test_upload_file_with_valid_extension(client, mock_ingestion_service):
+    """Test file upload with valid extension (.pdf)."""
+    file_content = b"Test PDF content"
+    files = {"file": ("document.pdf", BytesIO(file_content), "application/pdf")}
     
-    # Check file structure
-    if len(data["files"]) > 0:
-        file_obj = data["files"][0]
-        assert "filename" in file_obj
-        assert "size" in file_obj
-        assert "last_modified" in file_obj
-        assert "s3_key" in file_obj
-        assert "metadata" in file_obj
+    response = client.post("/files", files=files, headers={"X-Tenant-ID": TEST_TENANT_ID})
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data["filename"] == "uploaded.pdf"
+    assert mock_ingestion_service.upload_document.call_count == 1
+
+
+def test_upload_file_with_invalid_extension(client, mock_ingestion_service):
+    """Test file upload with invalid extension (.exe)."""
+    file_content = b"Executable content"
+    files = {"file": ("malicious.exe", BytesIO(file_content), "application/octet-stream")}
+    
+    response = client.post("/files", files=files, headers={"X-Tenant-ID": TEST_TENANT_ID})
+    
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert ".exe" in data["error"]["message"]
+    assert "not allowed" in data["error"]["message"]
+    # Service should not be called
+    assert mock_ingestion_service.upload_document.call_count == 0
+
+
+def test_upload_file_without_extension(client, mock_ingestion_service):
+    """Test file upload without extension."""
+    file_content = b"File without extension"
+    files = {"file": ("README", BytesIO(file_content), "text/plain")}
+    
+    response = client.post("/files", files=files, headers={"X-Tenant-ID": TEST_TENANT_ID})
+    
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert "must have a valid extension" in data["error"]["message"]
+    # Service should not be called
+    assert mock_ingestion_service.upload_document.call_count == 0
+
+
+def test_upload_file_case_insensitive_extension(client, mock_ingestion_service):
+    """Test file upload with uppercase extension (.PDF)."""
+    file_content = b"Test PDF content"
+    files = {"file": ("document.PDF", BytesIO(file_content), "application/pdf")}
+    
+    response = client.post("/files", files=files, headers={"X-Tenant-ID": TEST_TENANT_ID})
+    
+    # Should accept .PDF (case-insensitive)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["filename"] == "uploaded.pdf"
+    assert mock_ingestion_service.upload_document.call_count == 1

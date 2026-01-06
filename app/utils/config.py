@@ -36,6 +36,13 @@ class Config:
     # Tenant Configuration
     TENANT_HEADER_NAME: str = os.getenv("TENANT_HEADER_NAME", "X-Tenant-ID")
     TENANT_ID_REQUIRED: bool = os.getenv("TENANT_ID_REQUIRED", "true").lower() == "true"
+    
+    # File Upload Configuration
+    ALLOWED_FILE_EXTENSIONS: frozenset = frozenset([
+        ".pdf", ".txt", ".doc", ".docx", ".md", ".csv",
+        ".json", ".xml", ".html", ".htm", ".rtf", ".odt",
+        ".xls", ".xlsx", ".ppt", ".pptx"
+    ])
 
 
 def get_config() -> Config:
