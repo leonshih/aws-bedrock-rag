@@ -193,6 +193,33 @@
 
 **Test Results:** 242 tests passing, 99% coverage maintained
 
+### 🔄 Phase 7: Type Safety Enhancement (0% Complete) 📋 PLANNED
+
+**Objective:** Prevent runtime errors via Protocol contracts + static analysis
+
+**Root Cause:** Missing `S3Adapter.get_file()` bypassed Mock tests, reached production
+
+---
+
+**Implementation:**
+
+1. **Protocol Definitions**
+
+   - [ ] `app/adapters/s3/s3_protocol.py` (define S3AdapterProtocol)
+   - [ ] `app/adapters/bedrock/bedrock_protocol.py` (define BedrockAdapterProtocol)
+   - [ ] Update Services to use Protocol type hints
+
+2. **Static Analysis**
+
+   - [ ] Create `pyproject.toml` (mypy + ruff config)
+   - [ ] Makefile: `typecheck`, `lint`, `lint-fix` targets
+   - [ ] `.pre-commit-config.yaml`
+
+3. **Documentation**
+   - [ ] `TECH_RULES.md` Section 11
+
+**Success:** Zero mypy/ruff errors, 242+ tests passing
+
 ---
 
 ## 📈 Test Coverage
@@ -236,24 +263,30 @@
 **AWS Region:** us-east-1  
 **Model:** Claude 3.5 Sonnet v2 (`anthropic.claude-3-5-sonnet-20241022-v2:0`)
 
+**Development Workflow:**
+
+- **Current (Phase 6):** `make install` → `make test` → `make local`
+- **After Phase 7:** `make install-dev` → `make quality` (typecheck + lint + test) → `make local`
+
 ---
 
 ## 🎯 Next Steps
 
-1. **Immediate (Phase 5 - Response Format Refactoring)**:
+1. **Immediate (Phase 7 - Type Safety Enhancement)**:
 
-   - Remove wrapper pattern DTOs from `app/dtos/common.py`
-   - Refactor Service layer to return direct Pydantic Models
-   - Update Router layer to handle direct model responses
-   - Update all test assertions to match new response format
+   - Create Protocol contracts for S3Adapter and BedrockAdapter
+   - Add contract tests to verify adapter implementations
+   - Update all Mock() calls to use spec= parameter
+   - Set up mypy and ruff for static analysis
 
 2. **Short-term**:
 
-   - Complete Phase 5 implementation
-   - Verify all 234 tests still passing
-   - Update API documentation examples
+   - Complete Phase 7 Protocol implementation
+   - Configure pre-commit hooks
+   - Update documentation with type safety guidelines
+   - Verify all 242+ tests still passing
 
-3. **Medium-term (Phase 6)**:
+3. **Medium-term (Infrastructure)**:
    - Optimize Docker image
    - Set up ECS infrastructure
    - Configure CloudWatch logging

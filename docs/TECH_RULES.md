@@ -311,4 +311,143 @@ class TestRAGService:
 ```python
 class TestS3Adapter:
     @patch('boto3.client')
+    def test_upload(self, mock_boto_client):
+        # Test implementation with mocked boto3
+        pass
 ```
+
+---
+
+### 11. Type Safety & Protocol Contracts (MANDATORY)
+
+**Rule:** All Adapters MUST implement explicit Protocol contracts to ensure compile-time type safety and prevent interface drift.
+
+**Background:**
+
+- **Problem:** Mock-based testing allows calling methods that don't exist on real adapters, causing runtime errors in production.
+- **Solution:** Use `typing.Protocol` to define adapter interfaces + enforce `Mock(spec=RealClass)` in tests.
+
+**Implementation Pattern:**
+
+**Step 1: Define Protocol Contract**
+
+```python
+# app/adapters/protocols/s3_protocol.py
+from typing import Protocol, Dict, Optional
+from app.dtos.adapters.s3 import S3UploadResult, S3ListResult, S3DeleteResult
+
+class S3AdapterProtocol(Protocol):
+    """
+    Contract for S3 storage operations.
+    All S3 adapter implementations MUST provide these methods.
+    """
+
+    def upload_file(
+        self,
+        file_content: bytes,
+        bucket: str,
+        key: str,
+        metadata: Optional[Dict[str, str]] = None
+    ) -> S3UploadResult:
+        """Upload a file to S3 with optional metadata."""
+        ...
+
+    def list_files(self, bucket: str, prefix: str = "") -> S3ListResult:
+        """List files in S3 bucket."""
+        ...
+
+    def delete_file(self, bucket: str, key: str) -> S3DeleteResult:
+        """Delete a file from S3."""
+        ...
+
+    def get_file(self, bucket: str, key: str) -> bytes:
+        """Download file content from S3."""
+        ...
+```
+
+**Step 2: Service Layer Uses Protocol Type Hint**
+
+```python
+# app/services/ingestion/ingestion_service.py
+from app.adapters.protocols.s3_protocol import S3AdapterProtocol
+
+class IngestionService:
+    def __init__(self, s3_adapter: S3AdapterProtocol):  # ✅ Type hint with Protocol
+        self.s3_adapter = s3_adapter
+
+    def load_metadata(self, key: str):
+        content = self.s3_adapter.get_file(key)  # ✅ mypy verifies this exists
+        return json.loads(content)
+```
+
+**Step 3: Adapter Implements Protocol (Implicitly)**
+
+```python
+# app/adapters/s3/s3_adapter.py
+class S3Adapter:  # ✅ Duck-typing: satisfies S3AdapterProtocol
+    """S3 storage adapter implementation."""
+
+    def upload_file(self, file_content: bytes, bucket: str, key: str,
+                    metadata: Optional[Dict[str, str]] = None) -> S3UploadResult:
+        # Implementation
+        pass
+
+    def get_file(self, bucket: str, key: str) -> bytes:
+        # ⚠️ If we forget this method, mypy will error when used as S3AdapterProtocol
+        pass
+```
+
+**Step 4: Contract Tests Verify Implementation**
+
+```python
+# app/adapters/s3/test_s3_adapter_contract.py
+import pytest
+from app.adapters.s3.s3_adapter import S3Adapter
+
+@pytest.mark.contract
+class TestS3AdapterContract:
+    """Verify S3Adapter implements all required methods."""
+
+    def test_adapter_has_all_required_methods(self):
+        """Ensure adapter implements full protocol."""
+        adapter = S3Adapter()
+
+        # ✅ These fail if method doesn't exist
+        assert hasattr(adapter, 'upload_file')
+        assert hasattr(adapter, 'list_files')
+        assert hasattr(adapter, 'delete_file')
+        assert hasattr(adapter, 'get_file')  # ✅ Catches missing implementations
+
+        # Verify they're callable
+        assert callable(adapter.get_file)
+```
+
+**Step 5: Mock Tests Use Specification**
+
+```python
+# app/services/ingestion/test_ingestion_service.py
+from unittest.mock import Mock
+from app.adapters.s3.s3_adapter import S3Adapter
+
+def test_load_metadata():
+    # ✅ CORRECT: Mock with spec
+    mock_s3 = Mock(spec=S3Adapter)
+    mock_s3.get_file.return_value = b'{"data": "test"}'
+
+    service = IngestionService(s3_adapter=mock_s3)
+    result = service.load_metadata("key")
+
+    # ❌ This would fail: mock_s3.non_existent_method()
+    # AttributeError: Mock object has no attribute 'non_existent_method'
+```
+
+**Benefits:**
+
+- ✅ **Compile-time Safety:** mypy catches missing adapter methods before runtime
+- ✅ **Mock Safety:** `Mock(spec=Adapter)` prevents calling non-existent methods in tests
+- ✅ **Contract Enforcement:** Protocol ensures all adapters implement required interface
+- ✅ **Documentation:** Protocol serves as explicit interface documentation
+
+**See Also:** `docs/TYPE_SAFETY_GUIDE.md` for comprehensive implementation guide.
+
+---

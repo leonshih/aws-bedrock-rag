@@ -59,10 +59,12 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 
 - **IMMEDIATE ACTION:** Before updating documentation, strictly review the code you just generated against these criteria:
 
-  1.  **Security:** Are there SQL Injections? Exposed Secrets? Unvalidated Inputs? (OWASP Top 10 check).
-  2.  **Logic:** Are there infinite loops? Race conditions? Unhandled edge cases?
-  3.  **Redundancy:** Are there unused imports? Dead code? Redundant logic that can be simplified?
-  4.  **Privacy:** Are we accidentally logging PII (Personally Identifiable Information)?
+  1.  **Type Safety (Phase 7+):** Run `make typecheck` to verify type hints (skip if Phase 7 not complete).
+  2.  **Code Quality (Phase 7+):** Run `make lint` to check for violations (skip if Phase 7 not complete).
+  3.  **Security:** Are there SQL Injections? Exposed Secrets? Unvalidated Inputs? (OWASP Top 10 check).
+  4.  **Logic:** Are there infinite loops? Race conditions? Unhandled edge cases?
+  5.  **Redundancy:** Are there unused imports? Dead code? Redundant logic that can be simplified?
+  6.  **Privacy:** Are we accidentally logging PII (Personally Identifiable Information)?
 
 - **Decision Gate:**
   - ✅ **PASS:** If the code is clean, secure, and optimal → Proceed immediately to **Step 4**.
