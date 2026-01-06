@@ -168,6 +168,51 @@ async def chat(
 
 ---
 
+### 5.1 Multi-Tenant Dependency (MANDATORY)
+
+**Rule:** Tenant ID validation and extraction must use **FastAPI Dependency Injection**, not middleware.
+
+**Implementation Pattern:**
+
+```python
+# app/dependencies/tenant.py
+async def get_tenant_context(
+    x_tenant_id: Annotated[UUID, Header(description="Tenant UUID")]
+) -> TenantContext:
+    """Extract and validate tenant ID from X-Tenant-ID header."""
+    try:
+        return TenantContext(tenant_id=x_tenant_id)
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# app/routers/chat/chat_router.py
+@router.post("/chat")
+async def query_knowledge_base(
+    chat_request: ChatRequest,
+    tenant_context: Annotated[TenantContext, Depends(get_tenant_context)],
+    rag_service: Annotated[RAGService, Depends(get_rag_service)]
+) -> ChatResponse:
+    # Pass tenant_id as explicit parameter to service
+    return rag_service.query(chat_request, tenant_id=tenant_context.tenant_id)
+```
+
+**Key Principles:**
+
+1. **tenant_id is NOT part of request DTOs** (e.g., `ChatRequest`, `FileUploadRequest`)
+2. **Flow:** `X-Tenant-ID` header → `get_tenant_context` dependency → Router extracts `tenant_id` → Pass to Service as parameter
+3. **Service Layer:** Accept `tenant_id: UUID` as separate parameter (NOT in DTO)
+4. **Testing:** Override dependency using `app.dependency_overrides[get_tenant_context]`
+5. **Swagger UI:** FastAPI automatically displays X-Tenant-ID parameter in API docs
+
+**Benefits:**
+
+- ✅ Explicit dependencies in function signatures
+- ✅ Easier testing (use `dependency_overrides` instead of mocking middleware)
+- ✅ Automatic Swagger UI documentation
+- ✅ Follows FastAPI best practices
+
+---
+
 ## 📝 Coding Standards
 
 ### 6. Type Hints (MANDATORY)

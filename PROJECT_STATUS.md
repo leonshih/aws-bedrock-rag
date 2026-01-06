@@ -1,6 +1,6 @@
 # Project Status
 
-**Last Updated:** 2026-01-05  
+**Last Updated:** 2026-01-06  
 **Current Phase:** Phase 6 (Containerization & Deployment) - NOT STARTED  
 **Overall Progress:** ~99% Complete
 
@@ -122,6 +122,50 @@
    - [x] Run test suite and verify all 231 tests pass
    - [x] Confirm deprecation warnings reduced from 46 to 10 (all Pydantic warnings eliminated)
 
+### ✅ Phase 5.6: Tenant Validation Refactoring (100% Complete) 🎉
+
+**Objective:** Migrate tenant validation from Middleware to Dependency Injection for better FastAPI integration
+
+**Implementation Checklist:**
+
+1. **Dependency Module Creation** ✅ (2 files)
+
+   - [x] Create `app/dependencies/__init__.py`
+   - [x] Create `app/dependencies/tenant.py` with `get_tenant_context` function
+   - [x] Add comprehensive unit tests (6 test cases)
+
+2. **Router Layer Migration** ✅ (2 files)
+
+   - [x] Update `app/routers/chat/chat_router.py` to use `Depends(get_tenant_context)`
+   - [x] Update `app/routers/ingest/ingest_router.py` to use `Depends(get_tenant_context)`
+   - [x] Remove `Request` parameter dependency
+   - [x] Update function signatures to accept `TenantContext` directly
+
+3. **Application Configuration** ✅ (1 file)
+
+   - [x] Remove `TenantMiddleware` registration from `app/main.py`
+   - [x] Update FastAPI description to reflect dependency injection
+
+4. **Test Suite Updates** ✅ (3 files)
+
+   - [x] Update `app/routers/chat/test_chat_router.py` to use `dependency_overrides`
+   - [x] Update `app/routers/ingest/test_ingest_router.py` to use `dependency_overrides`
+   - [x] Update `app/tests/integration/test_multi_tenant.py` error handling tests (422 vs 400)
+
+5. **Documentation Updates** ✅ (2 files)
+   - [x] Update `ARCHITECTURE.md` tenant isolation flow
+   - [x] Update `docs/TECH_RULES.md` with Multi-Tenant Dependency rule (5.1)
+
+**Benefits Achieved:**
+
+- ✅ Swagger UI automatically displays `X-Tenant-ID` parameter
+- ✅ More idiomatic FastAPI pattern (explicit dependencies)
+- ✅ Easier testing (`dependency_overrides` vs middleware mocking)
+- ✅ Clearer code (explicit dependencies in function signatures)
+- ✅ Better error messages (FastAPI standard 422 for missing parameters)
+
+**Test Results:** 237 tests passing (6 new dependency tests added)
+
 ### ⏳ Phase 6: Containerization & Deployment (Not Started)
 
 - [ ] Docker optimization
@@ -134,7 +178,7 @@
 
 ## 📈 Test Coverage
 
-**Total Tests:** 231 tests (ALL PASSING ✅)  
+**Total Tests:** 237 tests (ALL PASSING ✅)  
 **Overall Coverage:** 🎯 **99%**
 
 ### Coverage by Module (Source Code)
@@ -144,6 +188,8 @@
 | **Adapters** (avg: 100%)         |                                        |          |                                      |
 | └─ Bedrock Adapter               | `app/adapters/bedrock/`                | 100%     | ✅ Full coverage                     |
 | └─ S3 Adapter                    | `app/adapters/s3/`                     | 100%     | ✅ Full coverage                     |
+| **Dependencies** (avg: 100%)     |                                        |          |                                      |
+| └─ Tenant Dependency             | `app/dependencies/tenant.py`           | 100%     | ✅ Full coverage                     |
 | **DTOs** (avg: 99%)              |                                        |          |                                      |
 | └─ Common Models                 | `app/dtos/common.py`                   | 96%      | 1 line (edge case)                   |
 | └─ Router DTOs                   | `app/dtos/routers/`                    | 100%     | ✅ Full coverage                     |

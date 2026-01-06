@@ -34,6 +34,7 @@ A production-ready **Retrieval-Augmented Generation (RAG)** API powered by AWS B
 aws-bedrock-rag/
 ├── app/                        # FastAPI Application
 │   ├── adapters/              # External system integrations (AWS Bedrock, S3)
+│   ├── dependencies/          # FastAPI dependencies (tenant validation, auth)
 │   ├── dtos/                  # Data Transfer Objects (Layer-based organization)
 │   │   ├── common.py         # Shared DTOs (Tenant context, Error models)
 │   │   ├── routers/          # Router layer DTOs
@@ -41,7 +42,7 @@ aws-bedrock-rag/
 │   │
 │   ├── services/              # Business logic layer
 │   ├── routers/               # API endpoints (FastAPI routers)
-│   ├── middleware/            # Exception handlers and middleware
+│   ├── middleware/            # Exception handlers
 │   ├── utils/                 # Utilities (config, helpers)
 │   ├── main.py               # Application entry point
 │   ├── Dockerfile            # Multi-stage Docker build
@@ -178,7 +179,7 @@ See [Architecture Documentation](ARCHITECTURE.md) for detailed request/response 
 
 ## 🔐 Multi-Tenant Support
 
-All API endpoints require a `X-Tenant-ID` header for tenant isolation:
+All API endpoints require a `X-Tenant-ID` header for tenant isolation. Validation is handled through **FastAPI dependency injection** (`app/dependencies/tenant.py`).
 
 ```bash
 # Query with tenant context
@@ -200,11 +201,25 @@ curl -X GET "http://localhost:8000/files" \
 
 **Tenant Isolation Features:**
 
-- UUID v4 format validation
-- S3 path isolation (`documents/{tenant_id}/`)
-- Automatic query filtering
-- Immutable tenant context
-- Audit logging
+- **Dependency-based validation:** `get_tenant_context()` extracts and validates `X-Tenant-ID`
+- **Automatic Swagger UI integration:** FastAPI generates header input fields in `/docs`
+- **UUID v4 format validation:** Returns **422 Unprocessable Entity** for invalid/missing tenant IDs
+- **S3 path isolation:** Documents stored under `s3://{bucket}/{tenant_id}/{filename}`
+- **Knowledge Base filtering:** Bedrock queries include `equalTo` filters on `tenant_id` metadata
+- **Test-friendly design:** Use `dependency_overrides` to mock tenant context in tests
+
+**Testing Multi-Tenant Logic:**
+
+```python
+from app.dependencies import get_tenant_context
+from app.dtos.common import TenantContext
+from uuid import UUID
+
+def override_tenant():
+    return TenantContext(tenant_id=UUID("550e8400-e29b-41d4-a716-446655440000"))
+
+app.dependency_overrides[get_tenant_context] = override_tenant
+```
 
 ---
 

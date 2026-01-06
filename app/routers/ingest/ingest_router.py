@@ -1,15 +1,16 @@
 """Ingest router for document management endpoints."""
 
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Request
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from typing import Annotated, Optional
 import json
 
 from app.dtos.routers.ingest import FileResponse, FileListResponse, FileDeleteResponse, FileMetadata
+from app.dtos.common import TenantContext
 from app.services.ingestion import IngestionService
 from app.adapters.s3 import S3Adapter
 from app.adapters.bedrock import BedrockAdapter
 from app.utils.config import Config
-from app.middleware.tenant_middleware import get_tenant_context
+from app.dependencies import get_tenant_context
 
 router = APIRouter(
     prefix="/files",
@@ -69,14 +70,14 @@ def get_ingestion_service() -> IngestionService:
     status_code=200
 )
 async def list_files(
-    request: Request,
-    ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
+    tenant_context: Annotated[TenantContext, Depends(get_tenant_context)],
+    ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)]
 ) -> FileListResponse:
     """
     List all documents for the authenticated tenant.
     
     Args:
-        request: FastAPI request object (to access middleware state)
+        tenant_context: Tenant context from dependency injection (validated)
         ingestion_service: Injected Ingestion service instance
         
     Returns:
@@ -85,9 +86,6 @@ async def list_files(
     Raises:
         HTTPException: 500 for server errors
     """
-    # Extract tenant_id from middleware (validated by TenantMiddleware)
-    tenant_context = get_tenant_context(request)
-    
     # Pass tenant_id to service for path isolation
     return ingestion_service.list_documents(tenant_id=tenant_context.tenant_id)
 
@@ -140,19 +138,19 @@ async def list_files(
     status_code=201
 )
 async def upload_file(
-    request: Request,
     file: Annotated[UploadFile, File(description="The file to upload")],
-    metadata: Annotated[Optional[str], Form(description="Optional JSON metadata")] = None,
-    ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
+    tenant_context: Annotated[TenantContext, Depends(get_tenant_context)],
+    ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)],
+    metadata: Annotated[Optional[str], Form(description="Optional JSON metadata")] = None
 ) -> FileResponse:
     """
     Upload a document to the Knowledge Base.
     
     Args:
-        request: FastAPI request object (to access middleware state)
         file: The uploaded file
-        metadata: Optional JSON string with custom metadata
+        tenant_context: Tenant context from dependency injection (validated)
         ingestion_service: Injected Ingestion service instance
+        metadata: Optional JSON string with custom metadata
         
     Returns:
         FileResponse with file details
@@ -160,9 +158,6 @@ async def upload_file(
     Raises:
         HTTPException: 400 for invalid input, 500 for server errors
     """
-    # Extract tenant_id from middleware (validated by TenantMiddleware)
-    tenant_context = get_tenant_context(request)
-    
     # Read file content
     file_content = await file.read()
     
@@ -227,15 +222,15 @@ async def upload_file(
 )
 async def delete_file(
     filename: str,
-    request: Request,
-    ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)] = None
+    tenant_context: Annotated[TenantContext, Depends(get_tenant_context)],
+    ingestion_service: Annotated[IngestionService, Depends(get_ingestion_service)]
 ) -> FileDeleteResponse:
     """
     Delete a document from the Knowledge Base.
     
     Args:
         filename: Name of the file to delete
-        request: FastAPI request object (to access middleware state)
+        tenant_context: Tenant context from dependency injection (validated)
         ingestion_service: Injected Ingestion service instance
         
     Returns:
@@ -244,9 +239,6 @@ async def delete_file(
     Raises:
         HTTPException: 404 if file not found, 500 for server errors
     """
-    # Extract tenant_id from middleware (validated by TenantMiddleware)
-    tenant_context = get_tenant_context(request)
-    
     # Delete document with tenant_id for path isolation
     response = ingestion_service.delete_document(
         filename=filename,

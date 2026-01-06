@@ -1,13 +1,14 @@
 """Chat router for RAG query endpoints."""
 
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends
 from typing import Annotated
 
 from app.dtos.routers.chat import ChatRequest, ChatResponse
+from app.dtos.common import TenantContext
 from app.services.rag import RAGService
 from app.adapters.bedrock import BedrockAdapter
 from app.utils.config import Config
-from app.middleware.tenant_middleware import get_tenant_context
+from app.dependencies import get_tenant_context
 
 router = APIRouter(
     prefix="/chat",
@@ -84,7 +85,7 @@ def get_rag_service() -> RAGService:
 )
 async def query_knowledge_base(
     chat_request: ChatRequest,
-    fastapi_request: Request,
+    tenant_context: Annotated[TenantContext, Depends(get_tenant_context)],
     rag_service: Annotated[RAGService, Depends(get_rag_service)]
 ) -> ChatResponse:
     """
@@ -92,7 +93,7 @@ async def query_knowledge_base(
     
     Args:
         chat_request: Chat request containing query and optional filters
-        fastapi_request: FastAPI request object (to access middleware state)
+        tenant_context: Tenant context from dependency injection (validated)
         rag_service: Injected RAG service instance
         
     Returns:
@@ -101,9 +102,6 @@ async def query_knowledge_base(
     Raises:
         HTTPException: 400 for invalid requests, 500 for server errors
     """
-    # Extract tenant_id from middleware (validated by TenantMiddleware)
-    tenant_context = get_tenant_context(fastapi_request)
-    
     # Pass tenant_id as separate parameter to service layer
     chat_response = rag_service.query(chat_request, tenant_id=tenant_context.tenant_id)
     

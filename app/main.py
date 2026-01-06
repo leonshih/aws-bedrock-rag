@@ -9,7 +9,6 @@ from fastapi.responses import JSONResponse
 from app.routers.chat import router as chat_router
 from app.routers.ingest import router as ingest_router
 from app.middleware.exception_handlers import register_exception_handlers
-from app.middleware.tenant_middleware import TenantMiddleware
 from app.utils.config import Config
 
 # Load configuration
@@ -53,14 +52,13 @@ app = FastAPI(
     - **Automatic Data Isolation**: Documents and queries are isolated per tenant
     - **S3 Path Isolation**: Files stored in `documents/{tenant_id}/` 
     - **Query Filtering**: RAG queries automatically filtered by tenant_id
-    - **UUID Validation**: Tenant IDs validated at middleware layer
+    - **UUID Validation**: Tenant IDs validated via dependency injection
     
     **Required Header:**
     - `X-Tenant-ID`: Your tenant UUID (format: `550e8400-e29b-41d4-a716-446655440000`)
     
     **Errors:**
-    - `400 Bad Request`: Missing or invalid tenant ID
-    - `422 Unprocessable Entity`: Invalid UUID format
+    - `422 Unprocessable Entity`: Missing or invalid UUID format for X-Tenant-ID
     
     ## 🚀 Getting Started
     
@@ -76,9 +74,6 @@ logger.info(f"Starting AWS Bedrock RAG API (Log Level: {config.LOG_LEVEL})")
 
 # Register global exception handlers
 register_exception_handlers(app)
-
-# Register tenant middleware
-app.add_middleware(TenantMiddleware)
 
 # Register routers
 app.include_router(chat_router)

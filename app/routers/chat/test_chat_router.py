@@ -1,15 +1,24 @@
 """Unit tests for chat router."""
 
 import pytest
+from uuid import UUID
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
 
 from app.main import app
 from app.dtos.routers.chat import ChatResponse, Citation
+from app.dtos.common import TenantContext
 from app.routers.chat.chat_router import get_rag_service
+from app.dependencies import get_tenant_context
 
 # Test tenant ID for all tests
 TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440000"
+
+
+@pytest.fixture
+def mock_tenant_context():
+    """Create a mock tenant context."""
+    return TenantContext(tenant_id=UUID(TEST_TENANT_ID))
 
 
 @pytest.fixture
@@ -33,9 +42,10 @@ def mock_rag_service():
 
 
 @pytest.fixture
-def client(mock_rag_service):
-    """Create test client with mocked RAG service."""
+def client(mock_rag_service, mock_tenant_context):
+    """Create test client with mocked dependencies."""
     app.dependency_overrides[get_rag_service] = lambda: mock_rag_service
+    app.dependency_overrides[get_tenant_context] = lambda: mock_tenant_context
     client = TestClient(app, raise_server_exceptions=False)
     yield client
     app.dependency_overrides.clear()

@@ -148,19 +148,19 @@ context = TenantContext(tenant_id="550e8400-e29b-41d4-a716-446655440000")
 
 ### Tenant Isolation Strategy
 
-**Current Status:** ✅ Model, Middleware, S3 Isolation, RAG Filter implemented
+**Current Status:** ✅ Model, Dependency Injection, S3 Isolation, RAG Filter implemented
 
 **Implementation Layers:**
 
-1. **Middleware Layer** (✅): Extract and validate `X-Tenant-ID` from HTTP headers
+1. **Dependency Layer** (✅): Extract and validate `X-Tenant-ID` from HTTP headers via FastAPI dependencies
 2. **Storage Layer** (✅): Enforce S3 path prefix `documents/{tenant_id}/`
 3. **Retrieval Layer** (✅): Auto-inject tenant filter in Bedrock Knowledge Base queries
-4. **Validation Layer** (✅): UUID format enforcement via Pydantic
+4. **Validation Layer** (✅): UUID format enforcement via Pydantic and FastAPI
 
 **Implemented Flow:**
 
 ```
-Client Request → TenantMiddleware (extract & validate tenant_id) → Router (get tenant from request.state) → Service (auto-inject tenant filter) → Adapter (apply S3 prefix)
+Client Request → Router (Depends(get_tenant_context)) → Service (receive tenant_id as parameter) → Adapter (apply S3 prefix / tenant filter)
 ```
 
 **Tenant Filter Details:**
@@ -374,10 +374,12 @@ Query
 - ✅ **Tenant Context Model:** UUID v4 validated data model ([`TenantContext`](app/dtos/common.py))
 - ✅ **UUID Validation:** Pydantic-based format validation (accepts with/without hyphens)
 - ✅ **Exception Types:** `TenantMissingError`, `TenantValidationError`
-- ✅ **Tenant ID Validation:** UUID v4 format validation for `X-Tenant-ID` header via middleware
-- ✅ **Mandatory Tenant Header:** Reject requests without valid tenant ID
+- ✅ **Tenant ID Validation:** UUID v4 format validation for `X-Tenant-ID` header via dependency injection
+- ✅ **Mandatory Tenant Header:** FastAPI automatically rejects requests without valid tenant ID (HTTP 422)
+- ✅ **Dependency Injection:** `get_tenant_context` dependency extracts and validates tenant from header
 - ✅ **Path Isolation:** Enforce `documents/{tenant_id}/` prefix in S3 operations
 - ✅ **Immutable Filters:** Auto-inject tenant filter into all RAG queries at service layer
+- ✅ **Swagger UI Integration:** X-Tenant-ID parameter automatically displayed in API docs
 - ⏳ **Ownership Validation:** Verify tenant owns file before delete/download operations
 
 ---
