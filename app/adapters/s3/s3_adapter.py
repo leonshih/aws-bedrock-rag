@@ -8,7 +8,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from app.utils.config import get_config
-from app.dtos.adapters.s3 import S3UploadResult, S3ObjectInfo, S3ListResult, S3DeleteResult
+from app.dtos.adapters.s3 import S3UploadResult, S3ObjectInfo, S3ListResult, S3DeleteResult, S3GetResult
 
 
 class S3Adapter:
@@ -139,5 +139,35 @@ class S3Adapter:
                 key=key
             )
             return result
+        except ClientError as e:
+            raise e
+    
+    def get_file(
+        self,
+        bucket: str,
+        key: str
+    ) -> bytes:
+        """
+        Download a file from S3.
+        
+        Args:
+            bucket: S3 bucket name
+            key: S3 object key (file path)
+        
+        Returns:
+            File content as bytes
+        
+        Raises:
+            ClientError: If AWS API call fails.
+        """
+        try:
+            response = self.client.get_object(
+                Bucket=bucket,
+                Key=key
+            )
+            
+            # Read the file content
+            content = response['Body'].read()
+            return content
         except ClientError as e:
             raise e

@@ -342,3 +342,46 @@ class TestIngestionService:
         
         # Should not call start_ingestion_job
         mock_bedrock.start_ingestion_job.assert_not_called()
+    
+    @patch('app.services.ingestion.ingestion_service.S3Adapter')
+    @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
+    def test_list_documents_with_spaces_in_filename(self, mock_bedrock_adapter_class, mock_s3_adapter_class, mock_config):
+        """Test listing documents with spaces and special characters in filename."""
+        from app.dtos.adapters.s3 import S3ListResult, S3ObjectInfo
+        
+        # Simulate real S3 behavior with a file that has spaces
+        filename = "PROJECT APOLLO - API ARCHITECTURE SPECIFICATION v2.4.txt"
+        mock_s3 = Mock()
+        mock_s3.list_files.return_value = S3ListResult(
+            objects=[
+                S3ObjectInfo(
+                    key=f"documents/{TEST_TENANT_ID}/{filename}",
+                    size=10240,
+                    last_modified="2023-12-01T00:00:00",
+                    etag="etag1"
+                ),
+                S3ObjectInfo(
+                    key=f"documents/{TEST_TENANT_ID}/{filename}.metadata.json",
+                    size=256,
+                    last_modified="2023-12-01T00:00:00",
+                    etag="etag2"
+                )
+            ],
+            total_count=2,
+            total_size=10496
+        )
+        mock_s3.get_file.return_value = json.dumps({
+            "metadataAttributes": {"category": "architecture", "version": "2.4"}
+        }).encode('utf-8')
+        mock_s3_adapter_class.return_value = mock_s3
+        mock_bedrock_adapter_class.return_value = Mock()
+        
+        service = IngestionService(config=mock_config)
+        response = service.list_documents(tenant_id=TEST_TENANT_ID)
+        
+        # Should list the file with metadata loaded
+        assert isinstance(response, FileListResponse)
+        assert response.total_count == 1
+        assert response.files[0].filename == filename
+        assert response.files[0].metadata is not None
+        assert response.files[0].metadata == {"category": "architecture", "version": "2.4"}

@@ -83,3 +83,21 @@ class S3DeleteResult(BaseModel):
             }
         }
     )
+
+
+class S3GetResult(BaseModel):
+    """Result of S3 file download operation."""
+    
+    content: bytes = Field(description="File content as bytes")
+    content_type: Optional[str] = Field(default=None, description="Content type of the object")
+    metadata: Optional[dict[str, str]] = Field(default=None, description="Object metadata")
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "content": b"file content",
+                "content_type": "application/json",
+                "metadata": {"key": "value"}
+            }
+        }
+    )
