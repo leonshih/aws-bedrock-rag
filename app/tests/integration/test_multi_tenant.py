@@ -149,8 +149,19 @@ class TestMultiTenantDataIsolation:
 class TestMultiTenantS3PathIsolation:
     """Test S3 path isolation for multi-tenant data segregation."""
 
-    def test_file_upload_endpoint_processes_tenant_context(self, client):
+    @patch('app.adapters.s3.s3_adapter.boto3.client')
+    @patch('app.adapters.bedrock.bedrock_adapter.boto3.client')
+    def test_file_upload_endpoint_processes_tenant_context(self, mock_bedrock_client, mock_s3_client, client):
         """Test that file upload endpoint processes tenant context correctly."""
+        # Mock AWS dependencies
+        s3_mock = Mock()
+        s3_mock.put_object.return_value = {}
+        mock_s3_client.return_value = s3_mock
+        
+        bedrock_mock = Mock()
+        bedrock_mock.start_ingestion_job.return_value = {'ingestionJob': {'ingestionJobId': 'job-id', 'status': 'STARTING'}}
+        mock_bedrock_client.return_value = bedrock_mock
+
         # Smoke test - full mock with bedrock-agent is complex
         # Unit tests cover the detailed path construction logic
         response = client.post(
@@ -159,8 +170,8 @@ class TestMultiTenantS3PathIsolation:
             headers={"X-Tenant-ID": TENANT_A_ID}
         )
         
-        # May fail without full AWS mock, but tenant context should be processed
-        assert response.status_code in [200, 201, 400, 500]
+        # Verify success
+        assert response.status_code == 201
 
     @patch('app.adapters.s3.s3_adapter.boto3.client')
     def test_file_list_filters_by_tenant_path(self, mock_boto_client, client):

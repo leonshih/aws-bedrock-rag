@@ -164,8 +164,19 @@ class TestIngestRouterIntegration:
         assert "total_size" in json_data
         assert isinstance(json_data["files"], list)
 
-    def test_upload_file_endpoint_exists(self, client):
+    @patch('app.adapters.s3.s3_adapter.boto3.client')
+    @patch('app.adapters.bedrock.bedrock_adapter.boto3.client')
+    def test_upload_file_endpoint_exists(self, mock_bedrock_client, mock_s3_client, client):
         """Test upload file endpoint is registered and accessible."""
+        # Mock successful upload
+        s3_mock = Mock()
+        s3_mock.put_object.return_value = {}
+        mock_s3_client.return_value = s3_mock
+        
+        bedrock_mock = Mock()
+        bedrock_mock.start_ingestion_job.return_value = {'ingestionJob': {'ingestionJobId': 'job-id', 'status': 'STARTING'}}
+        mock_bedrock_client.return_value = bedrock_mock
+
         # Minimal request to check endpoint exists
         response = client.post(
             "/files",
@@ -181,8 +192,19 @@ class TestIngestRouterIntegration:
         response = client.post("/files", data={}, headers={"X-Tenant-ID": TEST_TENANT_ID})
         assert response.status_code == 422
 
-    def test_upload_file_with_metadata(self, client):
+    @patch('app.adapters.s3.s3_adapter.boto3.client')
+    @patch('app.adapters.bedrock.bedrock_adapter.boto3.client')
+    def test_upload_file_with_metadata(self, mock_bedrock_client, mock_s3_client, client):
         """Test upload endpoint accepts metadata."""
+        # Mock successful upload
+        s3_mock = Mock()
+        s3_mock.put_object.return_value = {}
+        mock_s3_client.return_value = s3_mock
+        
+        bedrock_mock = Mock()
+        bedrock_mock.start_ingestion_job.return_value = {'ingestionJob': {'ingestionJobId': 'job-id', 'status': 'STARTING'}}
+        mock_bedrock_client.return_value = bedrock_mock
+
         response = client.post(
             "/files",
             files={"file": ("test.txt", b"test content", "text/plain")},
