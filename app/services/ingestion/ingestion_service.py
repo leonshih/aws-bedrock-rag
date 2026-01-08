@@ -106,7 +106,6 @@ class IngestionService:
         """
         # Construct tenant-specific prefix
         prefix = f"documents/{tenant_id}/"
-        logger.info(f"Listing documents for tenant {tenant_id} with prefix: {prefix}")
         
         # List all objects in the bucket with the tenant prefix (returns S3ListResult directly)
         s3_list_result = self.s3_adapter.list_files(
@@ -125,23 +124,16 @@ class IngestionService:
         file_map = {}
         metadata_map = {}
         
-        logger.debug(f"Processing {len(s3_objects)} S3 objects")
         for obj in s3_objects:
             key = obj.key
-            logger.debug(f"Processing S3 object: {key}")
             
             if key.endswith(".metadata.json"):
                 # Store metadata for later matching
                 base_key = key[:-14]  # Remove .metadata.json
                 metadata_map[base_key] = key
-                logger.debug(f"Found metadata file, base_key: {base_key}")
             else:
                 # Regular file
                 file_map[key] = obj
-                logger.debug(f"Found regular file: {key}")
-        
-        logger.debug(f"file_map keys: {list(file_map.keys())}")
-        logger.debug(f"metadata_map keys: {list(metadata_map.keys())}")
         
         # Build FileResponse objects
         for key, obj in file_map.items():
@@ -254,14 +246,12 @@ class IngestionService:
             Dictionary of metadata attributes or None if error
         """
         try:
-            logger.debug(f"Loading metadata from key: {metadata_key}")
             content = self.s3_adapter.get_file(
                 bucket=self.bucket_name,
                 key=metadata_key
             )
             metadata_doc = json.loads(content.decode('utf-8'))
             attributes = metadata_doc.get("metadataAttributes", {})
-            logger.debug(f"Successfully loaded metadata: {attributes}")
             return attributes
         except Exception as e:
             logger.warning(f"Failed to load metadata from {metadata_key}: {str(e)}")
