@@ -8,6 +8,7 @@ import json
 from unittest.mock import Mock, patch, ANY
 from datetime import datetime
 from app.services.ingestion import IngestionService
+from app.services.ingestion.ingestion_service import IngestionTransactionError
 from app.dtos.routers.ingest import FileMetadata, FileResponse, FileListResponse
 from app.utils.config import Config
 
@@ -50,7 +51,7 @@ class TestIngestionService:
     @patch('app.services.ingestion.ingestion_service.S3Adapter')
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
     def test_upload_document_basic(self, mock_bedrock_adapter_class, mock_s3_adapter_class, mock_config):
-        """Test basic document upload without metadata."""
+        """Test basic document upload with automatic tenant metadata (Rule 1.1)."""
         # Setup mocks
         mock_s3 = Mock()
         mock_bedrock = Mock()
@@ -71,14 +72,30 @@ class TestIngestionService:
         assert response.filename == "test.pdf"
         assert response.size == len(file_content)
         assert response.s3_key == f"documents/{TEST_TENANT_ID}/test.pdf"
-        assert response.metadata is None
         
-        # Verify S3 upload was called with tenant-specific path
-        mock_s3.upload_file.assert_called_once_with(
+        # Verify metadata was automatically created
+        assert response.metadata is not None
+        assert response.metadata["tenant_id"] == str(TEST_TENANT_ID)
+        assert "uploaded_at" in response.metadata
+        
+        # Verify S3 upload called for BOTH file and metadata
+        assert mock_s3.upload_file.call_count == 2
+        
+        # Verify file upload
+        mock_s3.upload_file.assert_any_call(
             file_content=file_content,
             bucket="test-bucket",
             key=f"documents/{TEST_TENANT_ID}/test.pdf"
         )
+        
+        # Verify metadata upload
+        # We can't use assert_any_call easily for the second call because of content, 
+        # so let's inspect the calls
+        calls = mock_s3.upload_file.call_args_list
+        metadata_call = calls[1]
+        assert metadata_call[1]["key"] == f"documents/{TEST_TENANT_ID}/test.pdf.metadata.json"
+        metadata_content = json.loads(metadata_call[1]["file_content"].decode('utf-8'))
+        assert metadata_content["metadataAttributes"]["tenant_id"] == str(TEST_TENANT_ID)
         
         # Verify sync was triggered
         mock_bedrock.start_ingestion_job.assert_called_once_with(
@@ -100,7 +117,9 @@ class TestIngestionService:
         metadata = {
             "author": "Dr. Smith",
             "year": 2023,
-            "category": "medical"
+            "category": "medical",
+            # Try to spoof tenant_id (Rule 1.2: System Overrides User)
+            "tenant_id": "fake-tenant-id"
         }
         
         response = service.upload_document(
@@ -112,7 +131,10 @@ class TestIngestionService:
         
         # Verify response includes metadata
         assert isinstance(response, FileResponse)
-        assert response.metadata == metadata
+        # Check integrity
+        assert response.metadata["author"] == "Dr. Smith"
+        assert response.metadata["tenant_id"] == str(TEST_TENANT_ID) # Must be overridden
+        assert response.metadata["tenant_id"] != "fake-tenant-id"
         
         # Verify two S3 uploads: file + metadata
         assert mock_s3.upload_file.call_count == 2
@@ -128,7 +150,74 @@ class TestIngestionService:
         metadata_json = json.loads(metadata_content)
         assert metadata_json["metadataAttributes"]["author"] == "Dr. Smith"
         assert metadata_json["metadataAttributes"]["year"] == 2023
-    
+        assert metadata_json["metadataAttributes"]["tenant_id"] == str(TEST_TENANT_ID)
+
+    @patch('app.services.ingestion.ingestion_service.S3Adapter')
+    @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
+    def test_upload_rollback_on_metadata_failure(self, mock_bedrock_adapter_class, mock_s3_adapter_class, mock_config):
+        """Test rollback when metadata upload fails (Rule X.1)."""
+        mock_s3 = Mock()
+        mock_bedrock = Mock()
+        mock_s3_adapter_class.return_value = mock_s3
+        mock_bedrock_adapter_class.return_value = mock_bedrock
+        
+        # Configure S3 mock to fail on second call (metadata upload)
+        # First call (file) succeeds
+        # Second call (metadata) raises exception
+        mock_s3.upload_file.side_effect = [None, Exception("S3 Upload Failed")]
+        
+        service = IngestionService(config=mock_config)
+        
+        with pytest.raises(IngestionTransactionError) as excinfo:
+            service.upload_document(
+                file_content=b"content",
+                filename="test.pdf",
+                tenant_id=TEST_TENANT_ID
+            )
+        
+        assert "Ingestion failed and was rolled back" in str(excinfo.value)
+        
+        # Verify rollback: delete_file should be called for the main file
+        mock_s3.delete_file.assert_any_call(
+            bucket="test-bucket",
+            key=f"documents/{TEST_TENANT_ID}/test.pdf"
+        )
+
+    @patch('app.services.ingestion.ingestion_service.S3Adapter')
+    @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
+    def test_upload_rollback_on_sync_failure(self, mock_bedrock_adapter_class, mock_s3_adapter_class, mock_config):
+        """Test rollback when Bedrock sync fails (Rule X.1)."""
+        mock_s3 = Mock()
+        mock_bedrock = Mock()
+        mock_s3_adapter_class.return_value = mock_s3
+        mock_bedrock_adapter_class.return_value = mock_bedrock
+        
+        # S3 uploads succeed
+        mock_s3.upload_file.return_value = None
+        
+        # Bedrock sync fails
+        mock_bedrock.start_ingestion_job.side_effect = Exception("Sync Failed")
+        
+        service = IngestionService(config=mock_config)
+        
+        with pytest.raises(IngestionTransactionError) as excinfo:
+            service.upload_document(
+                file_content=b"content",
+                filename="test.pdf",
+                tenant_id=TEST_TENANT_ID
+            )
+            
+        assert "Sync Failed" in str(excinfo.value)
+        
+        # Verify rollback: both file and metadata should be deleted
+        assert mock_s3.delete_file.call_count == 2
+        calls = mock_s3.delete_file.call_args_list
+        
+        # Order doesn't strictly matter, but implementation deletes file then metadata
+        keys_deleted = [c[1]["key"] for c in calls]
+        assert f"documents/{TEST_TENANT_ID}/test.pdf" in keys_deleted
+        assert f"documents/{TEST_TENANT_ID}/test.pdf.metadata.json" in keys_deleted
+
     @patch('app.services.ingestion.ingestion_service.S3Adapter')
     @patch('app.services.ingestion.ingestion_service.BedrockAdapter')
     def test_list_documents_empty(self, mock_bedrock_adapter_class, mock_s3_adapter_class, mock_config):

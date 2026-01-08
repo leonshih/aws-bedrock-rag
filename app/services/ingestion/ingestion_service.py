@@ -7,7 +7,7 @@ Handles the complete lifecycle of document ingestion into Bedrock Knowledge Base
 import json
 import logging
 from typing import List, Optional, Dict, Any, BinaryIO
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from uuid import UUID
 from app.adapters.s3 import S3Adapter
 from app.adapters.bedrock import BedrockAdapter
@@ -15,6 +15,11 @@ from app.dtos.routers.ingest import FileResponse, FileListResponse, FileDeleteRe
 from app.utils.config import Config
 
 logger = logging.getLogger(__name__)
+
+
+class IngestionTransactionError(Exception):
+    """Exception raised when an ingestion transaction fails and is rolled back."""
+    pass
 
 
 class IngestionService:
@@ -50,28 +55,40 @@ class IngestionService:
             
         Returns:
             FileResponse with file details
+
+        Raises:
+            IngestionTransactionError: If the upload process fails and is rolled back.
         """
         logger.info(f"Uploading document for tenant {tenant_id}: {filename} ({len(file_content)} bytes)")
         
         # Construct S3 key with tenant isolation (documents/{tenant_id}/filename)
         s3_key = f"documents/{tenant_id}/{filename}"
-        
-        # Upload the document to S3
-        s3_upload_res = self.s3_adapter.upload_file(
-            file_content=file_content,
-            bucket=self.bucket_name,
-            key=s3_key
-        )
+        metadata_key = f"{s3_key}.metadata.json"
 
-        logger.info({
-            "bucket": self.bucket_name
-            ,"key": s3_key
-        })
+        # Prepare Metadata (Rule 1.1 & 1.2)
+        # Force system metadata: tenant_id is MANDATORY for Bedrock filtering
+        final_metadata = metadata.copy() if metadata else {}
+        final_metadata["tenant_id"] = str(tenant_id)
+        final_metadata["uploaded_at"] = datetime.now(timezone.utc).isoformat()
         
-        # If metadata provided, create and upload .metadata.json sidecar
-        if metadata:
-            metadata_key = f"{s3_key}.metadata.json"
-            metadata_content = self._generate_metadata_json(metadata)
+        try:
+            # Step 1: Upload the document to S3
+            logger.debug(f"Step 1: Uploading file to {s3_key}")
+            self.s3_adapter.upload_file(
+                file_content=file_content,
+                bucket=self.bucket_name,
+                key=s3_key
+            )
+
+            logger.info({
+                "bucket": self.bucket_name,
+                "key": s3_key,
+                "msg": "File uploaded successfully"
+            })
+            
+            # Step 2: Upload .metadata.json sidecar (Mandatory)
+            logger.debug(f"Step 2: Uploading metadata to {metadata_key}")
+            metadata_content = self._generate_metadata_json(final_metadata)
             
             self.s3_adapter.upload_file(
                 file_content=metadata_content.encode('utf-8'),
@@ -81,18 +98,43 @@ class IngestionService:
             )
             logger.debug(f"Uploaded metadata file: {metadata_key}")
         
-        # Trigger Bedrock Knowledge Base sync
-        self._trigger_sync()
-        logger.info(f"Successfully uploaded {filename}, sync triggered")
-        
-        # Return file response
-        return FileResponse(
-            filename=filename,
-            size=len(file_content),
-            s3_key=s3_key,
-            last_modified=datetime.now(UTC),
-            metadata=metadata if metadata else None
-        )
+            # Step 3: Trigger Bedrock Knowledge Base sync
+            logger.debug("Step 3: Triggering Bedrock sync")
+            self._trigger_sync()
+            logger.info(f"Successfully uploaded {filename}, sync triggered")
+            
+            # Return file response
+            return FileResponse(
+                filename=filename,
+                size=len(file_content),
+                s3_key=s3_key,
+                last_modified=datetime.now(timezone.utc),
+                metadata=final_metadata
+            )
+
+        except Exception as e:
+            logger.error(f"Ingestion transaction failed for {filename}: {str(e)}")
+            logger.info("Rolling back changes...")
+            
+            # Compensation Logic (Rule X.1)
+            try:
+                # 1. Delete the main file if it exists
+                self.s3_adapter.delete_file(bucket=self.bucket_name, key=s3_key)
+                logger.info(f"Rollback: Deleted file {s3_key}")
+                
+                # 2. Delete the metadata file if it exists
+                try:
+                    self.s3_adapter.delete_file(bucket=self.bucket_name, key=metadata_key)
+                    logger.info(f"Rollback: Deleted metadata {metadata_key}")
+                except Exception:
+                    # Metadata might not have been created yet, ignore
+                    pass
+                
+            except Exception as rollback_error:
+                 logger.critical(f"Rollback failed! Orphaned data may exist. Error: {rollback_error}")
+            
+            # Re-raise as Domain Transaction Error
+            raise IngestionTransactionError(f"Ingestion failed and was rolled back: {str(e)}") from e
     
     def list_documents(self, tenant_id: UUID) -> FileListResponse:
         """

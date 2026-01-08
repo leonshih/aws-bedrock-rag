@@ -11,8 +11,9 @@ Before answering or generating code, you MUST inject the following context:
 
 1.  **Current Status:** 👉 `@PROJECT_STATUS.md` (Read this FIRST to understand active tasks and phase)
 2.  **Architecture:** 👉 `@ARCHITECTURE.md` (Understand layers and data flow)
-3.  **Rules:** 👉 `@docs/TECH_RULES.md` (The source of truth for coding standards)
-4.  **Glossary:** 👉 `@docs/GLOSSARY.md` (Use correct terminology)
+3.  **Tech Rules:** 👉 `@docs/TECH_RULES.md` (The source of truth for coding standards)
+4.  **Domain Rules:** 👉 `@docs/DOMAIN_RULES.md` (The source of truth for business logic & data integrity)
+5.  **Glossary:** 👉 `@docs/GLOSSARY.md` (Use correct terminology)
 
 ---
 
@@ -45,6 +46,9 @@ You strictly follow this process for every coding task. **Focus on ONE checklist
 
 - Propose a clear implementation plan **strictly limited** to that single task.
 - List the files you intend to create or modify.
+- **Failure Scenario Analysis (CRITICAL):**
+  - Explicitly analyze: _"What happens if external call X fails?"_ for every API/DB interaction.
+  - Define **Rollback Strategy** for multi-step operations (e.g., if S3 upload succeeds but Metadata fails).
 - Explicitly list the test cases or test files you will create/update to verify this task.
 - **STOP & WAIT:** Ask the user: _"Do you agree with this plan?"_ and wait for approval.
 
